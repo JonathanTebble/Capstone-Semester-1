@@ -5,6 +5,7 @@ import { getResponse } from "./ResponseLogic";
 
 function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLarge, setIsLarge] = useState(false);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [showChatPage, setShowChatPage] = useState(false);
@@ -88,22 +89,61 @@ function LandingPage() {
     }
   }, [messages]);
 
+  const handleClose = () => {
+    setIsOpen(false);
+    setShowChatPage(false);
+    setIsLarge(false);
+  };
+
   // Conditional rendering for chat page
   if (showChatPage) {
     return (
-      <div className="chatbox">
-        <div className="chatbox-header">
-          <div className="chatbox-icon-circle">
-            <img
-              src="/src/assets/capstoneicon1.png"
-              alt="Icon"
-              className="chatbox-icon-img"
-            />
-          </div>
-          <div className="chatbox-title-container">
-            <p className="chatbox-title">Terah</p>
-            <p className="chatbox-subtitle">The Epic Retirement AI Helper</p>
-            <div className="chatbox-separator"></div>
+      <div className={`chatbox ${isLarge ? "chatbox-large" : ""}`}>
+        <div>
+          <div className="chatbox-header" style={{ justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <div className="chatbox-icon-circle">
+                <img
+                  src="/src/assets/capstoneicon1.png"
+                  alt="Icon"
+                  className="chatbox-icon-img"
+                />
+              </div>
+              <div className="chatbox-title-container">
+                <p className="chatbox-title">Terah</p>
+                <p className="chatbox-subtitle">The Epic Retirement AI Helper</p>
+                <div className="chatbox-separator"></div>
+              </div>
+            </div>
+            <div>
+              <button
+                style={{
+                  marginRight: "5px",
+                  background: "#f0f0f0",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  padding: "4px 8px"
+                }}
+                onClick={() => setIsLarge((prev) => !prev)}
+              >
+                ⛶
+              </button>
+              <button
+                style={{
+                  background: "#f0f0f0",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  padding: "4px 8px"
+                }}
+                onClick={handleClose}
+              >
+                ✕
+              </button>
+            </div>
           </div>
         </div>
 
@@ -176,22 +216,53 @@ function LandingPage() {
       )}
 
       {isOpen && (
-        <div className="chatbox">
+        <div className={`chatbox ${isLarge ? "chatbox-large" : ""}`}>
           <div style={{ flex: 1, overflowY: "auto", marginBottom: "10px" }}>
-            <div className="chatbox-header">
-              <div className="chatbox-icon-circle">
-                <img
-                  src="/src/assets/capstoneicon1.png"
-                  alt="Icon"
-                  className="chatbox-icon-img"
-                />
+            <div className="chatbox-header" style={{ justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <div className="chatbox-icon-circle">
+                  <img
+                    src="/src/assets/capstoneicon1.png"
+                    alt="Icon"
+                    className="chatbox-icon-img"
+                  />
+                </div>
+                <div className="chatbox-title-container">
+                  <p className="chatbox-title">Terah</p>
+                  <p className="chatbox-subtitle">
+                    The Epic Retirement AI Helper
+                  </p>
+                  <div className="chatbox-separator"></div>
+                </div>
               </div>
-              <div className="chatbox-title-container">
-                <p className="chatbox-title">Terah</p>
-                <p className="chatbox-subtitle">
-                  The Epic Retirement AI Helper
-                </p>
-                <div className="chatbox-separator"></div>
+              <div>
+                <button
+                  style={{
+                    marginRight: "5px",
+                    background: "#f0f0f0",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    padding: "4px 8px"
+                  }}
+                  onClick={() => setIsLarge((prev) => !prev)}
+                >
+                  ⛶
+                </button>
+                <button
+                  style={{
+                    background: "#f0f0f0",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    padding: "4px 8px"
+                  }}
+                  onClick={handleClose}
+                >
+                  ✕
+                </button>
               </div>
             </div>
 
@@ -244,6 +315,5 @@ function LandingPage() {
 
 const container = document.createElement("div");
 document.body.appendChild(container);
-
 const root = ReactDOM.createRoot(container);
 root.render(<LandingPage />);
