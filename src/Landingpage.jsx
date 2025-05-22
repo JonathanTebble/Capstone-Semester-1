@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
+import { getResponse } from "./ResponseLogic";
 
 function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,9 +10,10 @@ function LandingPage() {
   const [showChatPage, setShowChatPage] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
   const chatScrollRef = useRef(null);
 
-  const toggleChat = () => setIsOpen(!isOpen);;
+  const toggleChat = () => setIsOpen(!isOpen);
 
   const handleStartChat = () => {
     if (name.trim() && location.trim()) {
@@ -19,10 +21,64 @@ function LandingPage() {
     }
   };
 
+  const typeResponse = (response, callback) => {
+    let i = 0;
+    const typingInterval = setInterval(() => {
+      if (i < response.length) {
+        setMessages(prev => {
+          const lastMsg = prev[prev.length - 1];
+          // If the last message is a bot message and it's still typing, update it
+          if (lastMsg && lastMsg.type === "bot" && lastMsg.isTyping) {
+            return [
+              ...prev.slice(0, -1),
+              {
+                ...lastMsg,
+                text: response.substring(0, i + 1),
+                isTyping: true
+              }
+            ];
+          }
+          // Otherwise, add a new bot message (for the first character or if previous was not typing bot)
+          return [
+            ...prev,
+            {
+              type: "bot",
+              text: response.substring(0, i + 1),
+              isTyping: true
+            }
+          ];
+        });
+        i++;
+      } else {
+        clearInterval(typingInterval);
+        setMessages(prev => {
+          const lastMsg = prev[prev.length - 1];
+          // Set isTyping to false for the last bot message
+          return [
+            ...prev.slice(0, -1),
+            {
+              ...lastMsg,
+              isTyping: false
+            }
+          ];
+        });
+        callback(); // Callback to set isTyping to false for the whole component
+      }
+    }, 30); // Adjust typing speed here (lower = faster)
+  };
+
   const handleSendMessage = () => {
-    if (message.trim()) {
-      setMessages((prev) => [...prev, { type: "user", text: message }]);
+    if (message.trim() && !isTyping) {
+      // Add user message
+      setMessages(prev => [...prev, { type: "user", text: message }]);
       setMessage("");
+      setIsTyping(true);
+
+      // Get bot response after 2 second delay
+      setTimeout(() => {
+        const botResponse = getResponse(message);
+        typeResponse(botResponse, () => setIsTyping(false));
+      }, 2000);
     }
   };
 
@@ -32,28 +88,26 @@ function LandingPage() {
     }
   }, [messages]);
 
+  // Conditional rendering for chat page
   if (showChatPage) {
     return (
       <div className="chatbox">
-        <div
-          className="chatbox-scroll-container"
-          ref={chatScrollRef}
-        >
-          <div className="chatbox-header">
-            <div className="chatbox-icon-circle">
-              <img
-                src="/src/assets/capstoneicon1.png"
-                alt="Icon"
-                className="chatbox-icon-img"
-              />
-            </div>
-            <div className="chatbox-title-container">
-              <p className="chatbox-title">Terah</p>
-              <p className="chatbox-subtitle">The Epic Retirement AI Helper</p>
-              <div className="chatbox-separator"></div>
-            </div>
+        <div className="chatbox-header">
+          <div className="chatbox-icon-circle">
+            <img
+              src="/src/assets/capstoneicon1.png"
+              alt="Icon"
+              className="chatbox-icon-img"
+            />
           </div>
+          <div className="chatbox-title-container">
+            <p className="chatbox-title">Terah</p>
+            <p className="chatbox-subtitle">The Epic Retirement AI Helper</p>
+            <div className="chatbox-separator"></div>
+          </div>
+        </div>
 
+        <div className="chatbox-scroll-container" ref={chatScrollRef}>
           <div className="chatbox-disclaimer-container">
             <p className="chatbox-disclaimer-title">Disclaimer</p>
             <p className="chatbox-disclaimer-text">
@@ -81,9 +135,16 @@ function LandingPage() {
               }
             >
               <p style={{ margin: 0 }}>{msg.text}</p>
+              {msg.isTyping && (
+                <span className="typing-indicator">
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                </span>
+              )}
             </div>
           ))}
-        </div>
+        </div> {/* End of chatbox-scroll-container */}
 
         <div className="chatbox-input-container">
           <input
@@ -102,6 +163,7 @@ function LandingPage() {
     );
   }
 
+  // Conditional rendering for landing page
   return (
     <>
       {!isOpen && (
@@ -173,13 +235,13 @@ function LandingPage() {
               </p>
             </div>
           </div>
-        </div>
+          {/* This is where the missing closing div was likely located for the chatbox-scroll-container equivalent on the landing page */}
+        </div> // Closing div for the chatbox when isOpen is true
       )}
     </>
   );
 }
 
-// Mount the component into a new DOM node
 const container = document.createElement("div");
 document.body.appendChild(container);
 
