@@ -64,5 +64,5 @@ export const getResponse = (message) => {
     q.triggers.some(trigger => cleanedMessage.includes(trigger))
   );
 
-  return foundResponse ? foundResponse.response : "I'm sorry, I can only answer pre-defined retirement questions. Try asking about superannuation or retirement age!";
+  return foundResponse ? foundResponse.response : "I'm sorry, I can only answer retirement questions. Try asking about superannuation or retirement age!";
 };
