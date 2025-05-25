@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
-import { getResponse } from "./ResponseLogic";
+import { sendToGemini } from "./geminiChat";
+
+
 
 function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,20 +70,23 @@ function LandingPage() {
     }, 30); // Adjust typing speed here (lower = faster)
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (message.trim() && !isTyping) {
-      // Add user message
-      setMessages(prev => [...prev, { type: "user", text: message }]);
+      const userText = message.trim();
+      setMessages(prev => [...prev, { type: "user", text: userText }]);
       setMessage("");
       setIsTyping(true);
-
-      // Get bot response after 2 second delay
-      setTimeout(() => {
-        const botResponse = getResponse(message);
-        typeResponse(botResponse, () => setIsTyping(false));
-      }, 2000);
+  
+      try {
+        const response = await sendToGemini(userText);
+        typeResponse(response, () => setIsTyping(false));
+      } catch {
+        typeResponse("Something went wrong.", () => setIsTyping(false));
+      }
     }
   };
+  
+  
 
   useEffect(() => {
     if (chatScrollRef.current) {
