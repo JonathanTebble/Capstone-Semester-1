@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
-import { sendToGemini } from "./geminiChat";
+import { sendToGemini } from "./geminiChat1";
 
 
 
@@ -76,7 +76,7 @@ function LandingPage() {
       setMessages(prev => [...prev, { type: "user", text: userText }]);
       setMessage("");
       setIsTyping(true);
-  
+
       try {
         const response = await sendToGemini(userText);
         typeResponse(response, () => setIsTyping(false));
@@ -85,8 +85,8 @@ function LandingPage() {
       }
     }
   };
-  
-  
+
+
 
   useEffect(() => {
     if (chatScrollRef.current) {

@@ -1,0 +1,75 @@
+Superannuation death benefit delays – you don’t get paid faster if you pay higher fees!
+4 Apr 2025 Research 2025
+Superannuation death benefit delays – you don’t get paid faster if you pay higher fees!
+In reading ASIC’s report on the lengthy delays that many people face when trying to claim a superannuation death benefit after the death of a loved one, we wondered whether paying higher fees results in better service.
+
+To answer this question we used the data that APRA published in September 2024 on fees that are charged to superannuation members in default products (MySuper). We also collected fees information for pension products from fund websites. 
+
+For the 10 funds examined by ASIC, there’s no relationship between fees and service, either for MySuper products or pension products. Paying higher fees did not translate into getting better service. In fact, the funds that processed death benefits fastest had some of the lowest fees.
+
+MySuper products
+
+The two fastest trustees had low administration fees:
+
+Avanteos, the trustee of FirstChoice Employer Super MySuper and Essential Super MySuper charges $70 per year admin fees on a $50,000 balance.
+Unisuper charges $80 per year admin fees on a $50,000 balance.
+By contrast, for the two slowest trustees:
+
+Commonwealth Superannuation Corporation had similarly low fees of $70 and $75 per year, for the Public Sector Super Accumulation Plan MySuper and Australian Defence Force MySuper respectively. 
+REST, the slowest trustee that ASIC examined, charges $130 per year in admin fees on a $50,000 balance.
+The highest MySuper administration fees charged by the funds that ASIC examined was Nulis, the trustee for MLC, which charges $200 per year for a $50,000 balance in their MLC MySuper product. Nulis was the fourth-fastest at processing death benefit payments. 
+
+Pension products
+
+For the two fastest trustees:
+
+Avanteos had a low administration fee of $100 on a $50,000 balance for FirstChoice Wholesale Retirement Pension.
+Unisuper had one of the higher administration fees of $176 on a $50,000 balance for Unisuper Flexi Pension.
+For the two slowest trustees:
+
+Commonwealth Superannuation Corporation had the lowest administration fee of $73 on a $50,000 balance for CSC Retirement Income.
+Rest had an administration fee of $128 on a $50,000 balance for Rest Pension. 
+The highest administration fee for pension products offered by the trustees that ASIC examined was Hostplus with a fee of $234 on a $50,000 balance for Hostplus Pension. Hostplus was the sixth-fastest at processing death benefit payments.
+
+Bottom line – paying higher administration fees does not mean you receive better service in superannuation.
+
+We urgently need mandatory customer service standards in superannuation, especially timeframes for processing death benefit payments. 
+
+Chart
+Table: MySuper product administration and total fees for the trustees included in ASIC’s death benefits report
+
+Super fund trustee	Percentage of death benefits paid by 90 days 	Administration fees and costs charged($50,000 account balance)	Administration fees and costs charged($100,000 account balance)	Total fees and costs charged($50,000 account balance)	Total fees and costs charged($100,000 account balance)	MySuper product
+Avanteos	48%	$70	$80	$790	$1,530	FirstChoice Employer Super – MySuper
+Avanteos	48%	$70	$80	$810	$1,570	Essential Super – MySuper
+Unisuper	41%	$80	$80	$780	$1,480	MySuper
+NM Super	34%	$165	$270	$850	$1,630	SignatureSuper – MySuper
+Nulis	32%	$200	$340	$1,025	$1,980	MLC MySuper
+ART	31%	$110	$160	$795	$1,530	Lifecycle Investment Strategy
+ART	31%	$65	$130	$700	$1,400	QSuper Lifetime
+Hostplus	22%	$115	$130	$1,130	$2,150	MySuper
+HESTA	21%	$150	$240	$735	$1,420	HESTA MySuper
+Brighter Super	20%	$75	$150	$770	$1,540	MySuper
+CSC	10%	$70	$80	$810	$1,550	PSSap MySuper
+CSC	10%	$75	$80	$825	$1,580	ADF MySuper
+REST	8%	$130	$180	$885	$1,690	MySuper
+As at 30 June 2024, Source: ASIC, APRA
+For lifecycle MySuper products the fee presented in this table is the fee for the youngest lifestage. 
+
+Large Employer MySuper products are not included.
+
+Chart
+Table: Account-based pension product administration and total fees for the trustees included in ASIC’s death benefits report
+
+Super fund trustee	Percentage of death benefits paid by 90 days 	Administration fees and costs charged($50,000 account balance)	Administration fees and costs charged($100,000 account balance)	Total fees and costs charged($50,000 account balance)	Total fees and costs charged($100,000 account balance)	Pension product 
+Avanteos	48%	$100	$200	$590	$1,180	FirstChoice Wholesale Retirement Pension – Balanced
+Unisuper	41%	$176	$256	$451	$806	Unisuper Flexi Pension – Balanced
+NM Super	34%	$173	$268	$288	$498	Signature Super Pension Account – Balanced Index
+Nulis	32%	$138	$198	$668	$1,258	MLC Masterkey Pension Fundamentals – MLC Balanced
+ART	31%	$112	$162	$362	$662	ART Super Savings Income Account – Balanced Risk-Adjusted option
+ART	31%	$92	$122	$367	$672	QSuper Income Account – Balanced Risk-Adjusted option
+Hostplus	22%	$234	$234	$744	$1,254	Hostplus Pension – Balanced
+HESTA	21%	$193	$308	$438	$798	HESTA Income Stream – Balanced Growth
+Brighter Super	20%	$96	$166	$411	$796	Brighter Super Pension – Balanced
+CSC	10%	$73	$98	$413	$778	CSCri – Balanced
+REST	8%	$128	$178	$443	$808	Rest Pension – Growth
+Source: Percent of death benefits paid – ASIC. Fees collected from Product Disclosure Statements accessed on fund websites on 3/4/2025. Excludes administration fees deducted from reserves. 
