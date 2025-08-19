@@ -1,25 +1,20 @@
+// src/geminiChat1.jsx
 import { GoogleGenAI } from "@google/genai";
 import contextData from "./selenium-web-scraper/src/context.json";
-//import fs from "fs";
+import { loadStaticData, buildReferenceText, selectRelevant } from "./loadStaticData";
 
-// Load all .txt files from a specified directory
-import guide1 from './Data/ATO.txt?raw';
-//import guide2 from './Data/guide2.txt?raw';
+// IMPORTANT: move your API key to an env var in real projects
+// .env: VITE_GEMINI_API_KEY=xxxxxxxx
+//const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+// or you can do a john
 
-// Combine all imported text into one reference source
-const txtData = `
---- guide1.txt ---
-${guide1}`;
-
-// API setup
 const ai = new GoogleGenAI({ apiKey: "AIzaSyBCM-WY7SxEACI95A3g34bGVVLEhJYmVJw" });
 
-// System instruction with strict "general information only" rule
+// System instruction (keep it concise — scraped context goes here)
 const systemInstruction = `
-You are a helpful retirement chatbot that answers questions about superannuation, age pension, and retirement planning in Australia. 
-You must only provide factual, general information based on publicly available government sources such as the ATO and MoneySmart. 
-You must never give personal financial advice, predictions, or recommendations tailored to an individual. 
-If the user asks for personal advice, politely decline and refer them to a licensed financial adviser.
+You are a helpful retirement chatbot that answers questions about superannuation, age pension, and retirement planning in Australia.
+Only provide factual, general information from government sources (ATO, Services Australia, MoneySmart, etc).
+Never give personal financial advice or tailored recommendations. If asked, decline and refer to a licensed financial adviser.
 
 Always:
 - Avoid personalising answers or making assumptions about the user's situation.
@@ -27,19 +22,48 @@ Always:
 - Respond in short, clear, and concise sentences.
 - Do not italicise or bold text, and do not use emojis.
 
-Reference Context:
+Scraped Reference Context (read-only, do not invent details):
 ${JSON.stringify(contextData, null, 2)}
-`;
+`.trim();
 
-// Create chat with system instruction + txt data
+// Create a single chat instance
 const chat = ai.chats.create({
   model: "gemini-2.0-flash",
   config: {
-    systemInstruction: `${systemInstruction}\n\nReference Information:\n${txtData}`,
+    systemInstruction,
   },
 });
 
+// lazy-load and cache the static data
+let _staticDataPromise;
+let _staticData;
+
+async function ensureStaticLoaded() {
+  if (!_staticDataPromise) {
+    _staticDataPromise = loadStaticData().then(d => {
+      _staticData = d;
+      return d;
+    });
+  }
+  return _staticDataPromise;
+}
+
 export async function sendToGemini(userInput) {
-  const result = await chat.sendMessage({ message: userInput });
+  await ensureStaticLoaded();
+
+  // QUICK option: include a compact reference every time
+  // const staticRef = buildReferenceText(_staticData);
+
+  // SMARTER option: include only relevant bits (simple keyword retrieval)
+  const staticRef = selectRelevant(_staticData, userInput);
+
+  const message = `
+${userInput}
+
+[Reference Information - Static Data]
+${staticRef}
+  `.trim();
+
+  const result = await chat.sendMessage({ message });
   return result.text;
 }
