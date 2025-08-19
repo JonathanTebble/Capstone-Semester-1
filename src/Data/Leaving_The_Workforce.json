@@ -1,0 +1,112 @@
+{
+  "ato_leaving_workforce": [
+    {
+      "qc_number": "QC 27129",
+      "title": "Leaving the workforce",
+      "summary": "Options and considerations when retiring, including planning, super access, and approved early retirement schemes.",
+      "sections": {
+        "planning_to_retire": {
+          "topics": [
+            "Before you retire",
+            "Payments leading into retirement",
+            "After you retire",
+            "Employee share schemes",
+            "CGT retirement exemption for small business"
+          ],
+          "details": {
+            "before_you_retire": [
+              "Consider your age, preservation age, and superannuation.",
+              "Understand how tax applies to retirement payments.",
+              "Check good leaver conditions if in an employee share scheme.",
+              "Review capital gains tax concessions if selling a small business.",
+              "Special rules apply for termination, redundancy, or early retirement scheme payments."
+            ],
+            "payments_leading_into_retirement": [
+              "Unused leave lump sums may be taxed at a lower rate.",
+              "Redundancy payments are tax-free up to a limit.",
+              "Early retirement scheme payments may receive concessional tax treatment."
+            ],
+            "after_you_retire": [
+              "Eligible for tax offsets such as seniors and pensioners tax offset.",
+              "Superannuation income stream tax offsets may apply if over 60 or receiving disability/death benefits."
+            ],
+            "employee_share_schemes": [
+              "Good leaver conditions may allow retention of ESS interests on retirement.",
+              "Forfeiture risk depends on scheme rules and personal circumstances."
+            ],
+            "cgt_retirement_exemption": [
+              "Lifetime exemption limit of $500,000 applies.",
+              "If under 55, must contribute exempt amount into super.",
+              "No requirement to cease business activity."
+            ]
+          },
+          "last_updated": "9 June 2025"
+        }
+      }
+    },
+    {
+      "qc_number": "QC 31878",
+      "title": "Transition to retirement",
+      "summary": "Rules for reducing working hours while supplementing income with super.",
+      "sections": {
+        "transition_to_retirement_rules": [
+          "Available at preservation age via a transition to retirement income stream (TRIS).",
+          "TRIS payments provide regular income but cannot be taken as lump sums.",
+          "Super benefits must be taken as non-commutable income streams."
+        ],
+        "super_guarantee_and_tris": [
+          "Employers must still make compulsory super contributions.",
+          "If TRIS not in retirement phase, earnings are taxed and excluded from transfer balance cap.",
+          "TRIS enters retirement phase at age 65, retirement, incapacity, or terminal illness."
+        ],
+        "last_updated": "9 June 2025"
+      }
+    },
+    {
+      "qc_number": "QC 31882",
+      "title": "Accessing your super to retire",
+      "summary": "Conditions and tax rules for withdrawing super at retirement.",
+      "sections": {
+        "when_you_can_access_super": [
+          "At preservation age and retirement.",
+          "At age 65 regardless of retirement.",
+          "Under transition to retirement rules."
+        ],
+        "preservation_age": "Varies by birth year and is different from pension age.",
+        "withdrawal_options": [
+          "Super income stream",
+          "Super lump sum",
+          "Combination of both"
+        ],
+        "tax_on_super_benefits": [
+          "Depends on age, amount, income stream vs lump sum, and taxed vs untaxed source.",
+          "Some amounts are tax-free components (e.g., after-tax contributions)."
+        ],
+        "last_updated": "9 June 2025"
+      }
+    },
+    {
+      "qc_number": "QC 27130",
+      "title": "Approved early retirement schemes",
+      "summary": "Employer schemes encouraging early retirement with concessional tax treatment.",
+      "sections": {
+        "what_is_scheme": "ATO-approved employer scheme to encourage certain employees to retire or resign.",
+        "tax_on_payments": [
+          "Tax-free up to a limit based on years of service (indexed annually).",
+          "Excess amounts treated as employment termination payments (ETPs).",
+          "From 1 July 2019, concessional treatment extended to employees 65+ retiring before pension age."
+        ],
+        "warnings": [
+          "Beware of illegal super schemes offering early access before preservation age.",
+          "Heavy penalties apply for participating in illegal schemes."
+        ],
+        "last_updated": "9 June 2025"
+      },
+      "disclaimer": {
+        "commitment": "ATO aims to provide accurate and clear information. Mistakes due to incorrect info will be considered in compliance actions.",
+        "financial_year_notice": "Some rules apply to specific financial years—check relevant year before applying.",
+        "copyright": "© Australian Taxation Office. Free to copy, adapt, and distribute with attribution."
+      }
+    }
+  ]
+}
