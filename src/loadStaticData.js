@@ -2,139 +2,134 @@
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
-// --- TEXT (kept as-is; you already do this) ---
-import atoTxt from "./Data/ATO.txt?raw";
-import scaTxt from "./Data/SuperConsumersAustralia.txt?raw";
+/**
+ * This loader ONLY handles tabular sources (CSV/XLSX).
+ *
+ * HOW IT WORKS
+ * ------------
+ * - CSV files: imported with ?raw (string) → parsed with Papa → capped rows → labeled.
+ * - XLSX files: imported with ?url (asset URL) → fetch ArrayBuffer → parse with xlsx → 
+ *   iterate ALL sheets → cap rows per sheet → labeled per sheet.
+ *
+ * Add new files by following the "ADD MORE FILES" section at the bottom.
+ */
 
-// --- CSV (import as raw text, then parse) ---
-import demographicsCsvRaw from "./Data/dss-demographics-2021-sa2-june-2025.csv?raw";
+// ---------- IMPORT YOUR TABULAR FILES HERE ----------
+import dssCsvRaw from "./Data/dss-demographics-2021-sa2-june-2025.csv?raw"; // CSV as raw text
+import absUrl from "./Data/ABS_Retirement_Comparison.xlsx?url";            // Excel as URL
+import trpUrl from "./Data/Transition_Retirement_Plans.xlsx?url";          // Excel as URL
+// ---------------------------------------------------
 
-// --- JSON (direct import) ---
-import leavingWorkforce from "./Data/Leaving_The_Workforce.json";
+const ROW_CAP = 30; // cap per dataset or sheet to keep prompts responsive
 
-// --- Excel (fetch as URL, read ArrayBuffer with xlsx) ---
-import absUrl from "./Data/ABS_Retirement_Comparison.xlsx?url";
-import trpUrl from "./Data/Transition_Retirement_Plans.xlsx?url";
+// ---- Simple in-module cache so we only parse once per page load ----
+let _cachedBlock = null;
+let _buildOncePromise = null;
 
-
-
-const ROW_CAP = 50;           // keep things small for the model (might take too long to go through)
-const CHAR_CAP_TEXT = 20000;  // per long text source
-
-export async function loadStaticData() {
-  // CSV → array of objects
-  const demographicsCsv = Papa.parse(demographicsCsvRaw, {
+/** Parse a CSV raw string into array-of-objects and cap rows. */
+function parseCsvRawCapped(raw) {
+  if (!raw) return [];
+  const res = Papa.parse(raw, {
     header: true,
     skipEmptyLines: true,
     dynamicTyping: true,
-  }).data;
-
-  // Excel → array of objects (first sheet)
-  const [absBuf, trpBuf] = await Promise.all([
-    fetch(absUrl).then(r => r.arrayBuffer()),
-    fetch(trpUrl).then(r => r.arrayBuffer()),
-  ]);
-
-  const absWb = XLSX.read(absBuf, { type: "array" });
-  const trpWb = XLSX.read(trpBuf, { type: "array" });
-
-  const abs = XLSX.utils.sheet_to_json(absWb.Sheets[absWb.SheetNames[0]], { defval: "" });
-  const trp = XLSX.utils.sheet_to_json(trpWb.Sheets[trpWb.SheetNames[0]], { defval: "" });
-
-  return {
-    texts: {
-      ATO: atoTxt,
-      SuperConsumersAustralia: scaTxt,
-    },
-    csv: {
-      demographics: demographicsCsv,
-    },
-    excel: {
-      ABS_Retirement_Comparison: abs,
-      Transition_Retirement_Plans: trp,
-    },
-    json: {
-      Leaving_The_Workforce: leavingWorkforce,
-    },
-  };
+  });
+  const rows = Array.isArray(res.data) ? res.data : [];
+  return rows.slice(0, ROW_CAP);
 }
 
-// Very simple compactor → sample rows and cap large text
-export function buildReferenceText(data) {
-  const parts = [];
+/** Fetch an .xlsx URL, parse ALL sheets to { sheetName: rows[] } with caps. */
+async function parseXlsxAllSheetsCapped(url) {
+  if (!url) return {};
+  const buf = await fetch(url).then((r) => r.arrayBuffer());
+  const wb = XLSX.read(buf, { type: "array" });
 
-  // txt (cap characters)
-  parts.push(
-    `--- ATO.txt ---\n${data.texts.ATO.slice(0, CHAR_CAP_TEXT)}`
-  );
-  parts.push(
-    `--- SuperConsumersAustralia.txt ---\n${data.texts.SuperConsumersAustralia.slice(0, CHAR_CAP_TEXT)}`
-  );
-
-  // csv sample
-  const demoRows = data.csv.demographics.slice(0, ROW_CAP);
-  parts.push(
-    `--- DSS Demographics (first ${ROW_CAP} rows) ---\n` +
-      demoRows.map(r => JSON.stringify(r)).join("\n")
-  );
-
-  // json excerpt
-  parts.push(
-    `--- Leaving_The_Workforce.json (excerpt) ---\n` +
-      JSON.stringify(data.json.Leaving_The_Workforce, null, 2).slice(0, CHAR_CAP_TEXT)
-  );
-
-  // excel samples
-  parts.push(
-    `--- ABS_Retirement_Comparison.xlsx (first ${ROW_CAP} rows) ---\n` +
-      JSON.stringify(data.excel.ABS_Retirement_Comparison.slice(0, ROW_CAP))
-  );
-  parts.push(
-    `--- Transition_Retirement_Plans.xlsx (first ${ROW_CAP} rows) ---\n` +
-      JSON.stringify(data.excel.Transition_Retirement_Plans.slice(0, ROW_CAP))
-  );
-
-  return parts.join("\n\n");
+  const out = {};
+  for (const sheetName of wb.SheetNames) {
+    const sheet = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    out[sheetName] = rows.slice(0, ROW_CAP);
+  }
+  return out; // e.g., { "Sheet1": [...], "Sheet2": [...] }
 }
 
-// (Optional) tiny "retrieval": return only lines containing a keyword
-export function selectRelevant(data, query) {
-  const q = String(query || "").toLowerCase();
-  if (!q) return buildReferenceText(data);
+/**
+ * buildTabularReferenceBlock
+ * --------------------------
+ * Returns a single string that contains labeled snippets from:
+ * - CSV sources
+ * - ALL sheets of each XLSX source
+ *
+ * The string is meant to be appended to your static “Reference Information” block.
+ * It is cached so you don’t re-parse files every time the user asks a question.
+ */
+export async function buildTabularReferenceBlock() {
+  if (_cachedBlock) return _cachedBlock;
+  if (_buildOncePromise) return _buildOncePromise;
 
-  const contains = (obj) => JSON.stringify(obj).toLowerCase().includes(q);
+  _buildOncePromise = (async () => {
+    const parts = [];
 
-  const keepSome = (arr) => arr.filter(contains).slice(0, ROW_CAP);
-  const keepText = (txt) => {
-    if (!txt) return "";
-    // return a short window around matches (simple)
-    if (txt.toLowerCase().includes(q)) return txt.slice(0, CHAR_CAP_TEXT);
-    return "";
-  };
+    // 1) CSV(s)
+    const dssRows = parseCsvRawCapped(dssCsvRaw);
+    if (dssRows.length) {
+      parts.push(
+        `--- DSS_Demographics.csv (first ${ROW_CAP} rows) ---\n` +
+          dssRows.map((r) => JSON.stringify(r)).join("\n")
+      );
+    }
 
-  const parts = [];
-  const t1 = keepText(data.texts.ATO);
-  if (t1) parts.push(`--- ATO.txt (relevant excerpt) ---\n${t1}`);
-  const t2 = keepText(data.texts.SuperConsumersAustralia);
-  if (t2) parts.push(`--- SuperConsumersAustralia.txt (relevant excerpt) ---\n${t2}`);
+    // 2) XLSX: parse ALL sheets per workbook and label by sheet name
+    const [absSheets, trpSheets] = await Promise.all([
+      parseXlsxAllSheetsCapped(absUrl),
+      parseXlsxAllSheetsCapped(trpUrl),
+    ]);
 
-  const dem = keepSome(data.csv.demographics);
-  if (dem.length)
-    parts.push(`--- DSS Demographics (matching rows) ---\n` + dem.map(r => JSON.stringify(r)).join("\n"));
+    for (const [sheetName, rows] of Object.entries(absSheets)) {
+      if (rows && rows.length) {
+        parts.push(
+          `--- ABS_Retirement_Comparison.xlsx / ${sheetName} (first ${ROW_CAP} rows) ---\n` +
+            JSON.stringify(rows)
+        );
+      }
+    }
 
-  const abs = keepSome(data.excel.ABS_Retirement_Comparison);
-  if (abs.length)
-    parts.push(`--- ABS_Retirement_Comparison.xlsx (matching rows) ---\n` + JSON.stringify(abs));
+    for (const [sheetName, rows] of Object.entries(trpSheets)) {
+      if (rows && rows.length) {
+        parts.push(
+          `--- Transition_Retirement_Plans.xlsx / ${sheetName} (first ${ROW_CAP} rows) ---\n` +
+            JSON.stringify(rows)
+        );
+      }
+    }
 
-  const trp = keepSome(data.excel.Transition_Retirement_Plans);
-  if (trp.length)
-    parts.push(`--- Transition_Retirement_Plans.xlsx (matching rows) ---\n` + JSON.stringify(trp));
+    _cachedBlock = parts.join("\n\n");
+    return _cachedBlock;
+  })();
 
-  const lw = contains(data.json.Leaving_The_Workforce) ? data.json.Leaving_The_Workforce : null;
-  if (lw)
-    parts.push(`--- Leaving_The_Workforce.json (matching) ---\n` + JSON.stringify(lw, null, 2).slice(0, CHAR_CAP_TEXT));
-
-  // fall back to compact reference if nothing matched
-  if (!parts.length) return buildReferenceText(data);
-  return parts.join("\n\n");
+  return _buildOncePromise;
 }
+
+/**
+ * ADD MORE FILES (optional)
+ * -------------------------
+ * CSV:
+ *   import myCsvRaw from "./Data/MyFile.csv?raw";
+ *   const myCsvRows = parseCsvRawCapped(myCsvRaw);
+ *   parts.push(
+ *     `--- MyFile.csv (first ${ROW_CAP} rows) ---\n` +
+ *     myCsvRows.map(r => JSON.stringify(r)).join("\n")
+ *   );
+ *
+ * XLSX:
+ *   import myXlsxUrl from "./Data/MyWorkbook.xlsx?url";
+ *   const mySheets = await parseXlsxAllSheetsCapped(myXlsxUrl);
+ *   for (const [sheet, rows] of Object.entries(mySheets)) {
+ *     if (rows.length) {
+ *       parts.push(
+ *         `--- MyWorkbook.xlsx / ${sheet} (first ${ROW_CAP} rows) ---\n` +
+ *         JSON.stringify(rows)
+ *       );
+ *     }
+ *   }
+ */
