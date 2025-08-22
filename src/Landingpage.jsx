@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
-import { sendToGeminiHtml } from "./geminiChat1";
-import { sendToGemini } from "./geminiChat1"; // plain text with (url)
+import { sendToGemini } from "./geminiChat1"; 
 
 
 
@@ -91,7 +90,6 @@ const handleSendMessage = async () => {
     setIsTyping(true);
 
     try {
-      // 1) Add a bot placeholder that we'll "type" into
       const placeholderIndex = (() => {
         let idx = -1;
         setMessages(prev => {
@@ -102,10 +100,8 @@ const handleSendMessage = async () => {
         return () => idx; // getter to avoid stale closure
       })();
 
-      // 2) Get the plain text (with "(url)" at end)
       const plainReply = await sendToGemini(userText) || "";
 
-      // 3) Type it out char-by-char into msg.text
       let i = 0;
       const typeInterval = setInterval(() => {
         i++;
@@ -118,7 +114,6 @@ const handleSendMessage = async () => {
         });
         if (i >= plainReply.length) {
           clearInterval(typeInterval);
-          // 4) When done typing, swap text → html (clickable)
           const html = linkifyParensUrlsToHtml(plainReply);
           setMessages(prev => {
             const copy = [...prev];
@@ -224,7 +219,6 @@ const handleSendMessage = async () => {
           </div>
 
           {messages.map((msg, idx) => {
-            // USER bubble
             if (msg.type === "user") {
               return (
                 <div key={idx} className="chatbox-user-bubble">
@@ -233,7 +227,6 @@ const handleSendMessage = async () => {
               );
             }
 
-            // BOT: typing just started → no bubble, only dots
             if (msg.isTyping && (!msg.text || msg.text.length === 0)) {
               return (
                 <div key={idx} className="chatbox-typing-row">
@@ -246,7 +239,7 @@ const handleSendMessage = async () => {
               );
             }
 
-            // BOT: typing with partial text
+            // typing with partial text
             if (msg.isTyping) {
               return (
                 <div key={idx} className="chatbox-message-bubble">
@@ -260,7 +253,7 @@ const handleSendMessage = async () => {
               );
             }
 
-            // BOT: finished → clickable HTML if present
+            // finished → clickable HTML if present
             return (
               <div key={idx} className="chatbox-message-bubble">
                 {msg.html ? (

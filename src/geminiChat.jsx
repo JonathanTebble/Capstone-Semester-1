@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import contextData from "./selenium-web-scraper/src/context.json";
 
+
 const ai = new GoogleGenAI({ apiKey: "AIzaSyBCM-WY7SxEACI95A3g34bGVVLEhJYmVJw" });
 
 const systemInstruction = `

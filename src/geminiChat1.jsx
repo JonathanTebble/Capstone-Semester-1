@@ -1,12 +1,8 @@
-// src/geminiChat1.jsx
+// geminiChat1.jsx
 import { GoogleGenAI } from "@google/genai";
 import contextData from "./selenium-web-scraper/src/context.json";
-
-// KEEP your teammate's TXT imports, now with SuperConsumersAustralia.txt added
 import guide1 from "./Data/ATO.txt?raw";
 import scaTxt from "./Data/SuperConsumersAustralia.txt?raw";
-
-// Bring in the tabular references (ALL sheets), built once
 import { buildTabularReferenceBlock } from "./loadStaticData";
 
 // Build the TXT reference block (now includes both files)
@@ -18,7 +14,6 @@ ${guide1}
 ${scaTxt}
 `;
 
-// Per your request, keeping API key visible here
 const ai = new GoogleGenAI({
   apiKey: "AIzaSyBCM-WY7SxEACI95A3g34bGVVLEhJYmVJw",
 });
@@ -50,27 +45,22 @@ const SCRAPED_LABEL_TO_URL = [
 
 /** Static reference label rules (regex → URL) */
 const LABEL_TO_URL_RULES = [
-  // CSV
   {
     match: /^DSS_Demographics\.csv(?:\s*\/\s*.*)?$/i,
     url: "https://data.gov.au/organization/department-of-social-services",
   },
-  // ABS workbook (any sheet)
   {
     match: /^ABS_Retirement_Comparison\.xlsx\s*\/\s*.+/i,
     url: "https://www.abs.gov.au/statistics/labour/employment-and-unemployment/retirement-and-retirement-intentions-australia",
   },
-  // Transition workbook (any sheet)
   {
     match: /^Transition_Retirement_Plans\.xlsx\s*\/\s*.+/i,
     url: "https://www.ato.gov.au/api/public/content/0-74828496-dead-4b1a-8503-ffbe95d37398?1755658690387",
   },
-  // TXT: ATO guide (your teammate's)
   {
     match: /^(guide1|ATO)\.txt(?:\s*\/\s*.*)?$/i,
     url: "https://www.ato.gov.au/individuals-and-families/jobs-and-employment-types/working-as-an-employee/leaving-the-workforce/planning-to-retire",
   },
-  // TXT: Super Consumers Australia (now included)
   {
     match: /^SuperConsumersAustralia\.txt(?:\s*\/\s*.*)?$/i,
     url: "https://superconsumers.com.au/research/superannuation-death-benefit-delays-you-dont-get-paid-faster-if-you-pay-higher-fees/",
@@ -81,13 +71,11 @@ const LABEL_TO_URL_RULES = [
 function labelsToUrls(labels) {
   const urls = [];
 
-  // exact match for scraped labels
   for (const label of labels) {
     const found = SCRAPED_LABEL_TO_URL.find((s) => s.label === label.trim());
     if (found?.url && !urls.includes(found.url)) urls.push(found.url);
   }
 
-  // regex for static labels
   for (const label of labels) {
     const trimmed = label.trim();
     for (const rule of LABEL_TO_URL_RULES) {
