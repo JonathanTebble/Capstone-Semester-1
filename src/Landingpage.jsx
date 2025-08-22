@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
-import { sendToGemini } from "./geminiChat1";
+import { sendToGeminiHtml } from "./geminiChat1";
+import { sendToGemini } from "./geminiChat1"; // plain text with (url)
 
 
 
@@ -23,6 +24,15 @@ function LandingPage() {
       setShowChatPage(true);
     }
   };
+
+  function linkifyParensUrlsToHtml(text) {
+  if (!text) return "";
+  return text.replace(
+    /\((https?:\/\/[^\s)]+)\)/g,
+    '(<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>)'
+  );
+}
+
 
   const typeResponse = (response, callback) => {
     let i = 0;
@@ -70,21 +80,64 @@ function LandingPage() {
     }, 30); // Adjust typing speed here (lower = faster)
   };
 
-  const handleSendMessage = async () => {
-    if (message.trim() && !isTyping) {
-      const userText = message.trim();
-      setMessages(prev => [...prev, { type: "user", text: userText }]);
-      setMessage("");
-      setIsTyping(true);
 
-      try {
-        const response = await sendToGemini(userText);
-        typeResponse(response, () => setIsTyping(false));
-      } catch {
-        typeResponse("Something went wrong.", () => setIsTyping(false));
-      }
+
+
+const handleSendMessage = async () => {
+  if (message.trim() && !isTyping) {
+    const userText = message.trim();
+    setMessages(prev => [...prev, { type: "user", text: userText }]);
+    setMessage("");
+    setIsTyping(true);
+
+    try {
+      // 1) Add a bot placeholder that we'll "type" into
+      const placeholderIndex = (() => {
+        let idx = -1;
+        setMessages(prev => {
+          const copy = [...prev, { type: "bot", text: "", isTyping: true }];
+          idx = copy.length - 1;
+          return copy;
+        });
+        return () => idx; // getter to avoid stale closure
+      })();
+
+      // 2) Get the plain text (with "(url)" at end)
+      const plainReply = await sendToGemini(userText) || "";
+
+      // 3) Type it out char-by-char into msg.text
+      let i = 0;
+      const typeInterval = setInterval(() => {
+        i++;
+        setMessages(prev => {
+          const copy = [...prev];
+          const idx = placeholderIndex();
+          if (!copy[idx]) return prev;
+          copy[idx] = { ...copy[idx], text: plainReply.slice(0, i), isTyping: true };
+          return copy;
+        });
+        if (i >= plainReply.length) {
+          clearInterval(typeInterval);
+          // 4) When done typing, swap text → html (clickable)
+          const html = linkifyParensUrlsToHtml(plainReply);
+          setMessages(prev => {
+            const copy = [...prev];
+            const idx = placeholderIndex();
+            if (!copy[idx]) return prev;
+            copy[idx] = { type: "bot", html, isTyping: false }; // final HTML bubble
+            return copy;
+          });
+          setIsTyping(false);
+        }
+      }, 20); // adjust speed
+    } catch (err) {
+      console.error(err);
+      setMessages(prev => [...prev, { type: "bot", text: "Something went wrong.", isTyping: false }]);
+      setIsTyping(false);
     }
-  };
+  }
+};
+
 
 
 
@@ -170,25 +223,60 @@ function LandingPage() {
             <p style={{ margin: 0 }}>How can I help you today?</p>
           </div>
 
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={
-                msg.type === "user"
-                  ? "chatbox-user-bubble"
-                  : "chatbox-message-bubble"
-              }
-            >
-              <p style={{ margin: 0 }}>{msg.text}</p>
-              {msg.isTyping && (
-                <span className="typing-indicator">
-                  <span className="typing-dot"></span>
-                  <span className="typing-dot"></span>
-                  <span className="typing-dot"></span>
-                </span>
-              )}
-            </div>
-          ))}
+          {messages.map((msg, idx) => {
+            // USER bubble
+            if (msg.type === "user") {
+              return (
+                <div key={idx} className="chatbox-user-bubble">
+                  <p style={{ margin: 0 }}>{msg.text}</p>
+                </div>
+              );
+            }
+
+            // BOT: typing just started → no bubble, only dots
+            if (msg.isTyping && (!msg.text || msg.text.length === 0)) {
+              return (
+                <div key={idx} className="chatbox-typing-row">
+                  <span className="typing-indicator">
+                    <span className="typing-dot"></span>
+                    <span className="typing-dot"></span>
+                    <span className="typing-dot"></span>
+                  </span>
+                </div>
+              );
+            }
+
+            // BOT: typing with partial text
+            if (msg.isTyping) {
+              return (
+                <div key={idx} className="chatbox-message-bubble">
+                  <p style={{ margin: 0 }}>{msg.text}</p>
+                  <span className="typing-indicator">
+                    <span className="typing-dot"></span>
+                    <span className="typing-dot"></span>
+                    <span className="typing-dot"></span>
+                  </span>
+                </div>
+              );
+            }
+
+            // BOT: finished → clickable HTML if present
+            return (
+              <div key={idx} className="chatbox-message-bubble">
+                {msg.html ? (
+                  <div
+                    style={{ margin: 0, whiteSpace: "pre-wrap", lineHeight: 1.5 }}
+                    dangerouslySetInnerHTML={{ __html: msg.html }}
+                  />
+                ) : (
+                  <p style={{ margin: 0 }}>{msg.text}</p>
+                )}
+              </div>
+            );
+          })}
+
+
+
         </div> {/* End of chatbox-scroll-container */}
 
         <div className="chatbox-input-container">

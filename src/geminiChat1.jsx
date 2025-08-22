@@ -68,7 +68,7 @@ const LABEL_TO_URL_RULES = [
   // TXT: ATO guide (your teammate's)
   {
     match: /^(guide1|ATO)\.txt(?:\s*\/\s*.*)?$/i,
-    url: "https://www.ato.gov.au/Individuals/Super/In-detail/Withdrawing-and-using-your-super",
+    url: "https://www.ato.gov.au/individuals-and-families/jobs-and-employment-types/working-as-an-employee/leaving-the-workforce/planning-to-retire",
   },
   // TXT: Super Consumers Australia (now included)
   {
@@ -99,15 +99,6 @@ function labelsToUrls(labels) {
   }
 
   return urls;
-}
-
-// Make "(https://...)" clickable while preserving parentheses + spacing
-function toHtmlWithClickableParensUrls(textWithParensUrls) {
-  if (!textWithParensUrls) return "";
-  return textWithParensUrls.replace(
-    /\((https?:\/\/[^\s)]+)\)/g,
-    '(<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>)'
-  );
 }
 
 // Guardrails + scraped context + catalogs (model sees all of these)
@@ -153,6 +144,17 @@ async function getChat() {
 
   return _chatPromise;
 }
+
+
+// Make "(https://...)" clickable while preserving parentheses + spacing
+function toHtmlWithClickableParensUrls(textWithParensUrls) {
+  if (!textWithParensUrls) return "";
+  return textWithParensUrls.replace(
+    /\((https?:\/\/[^\s)]+)\)/g,
+    '(<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>)'
+  );
+}
+
 
 // Take model text, pull CITES line, append EXACT " (url) (url)" at the end
 function appendParensUrlsFromCites(fullText) {
