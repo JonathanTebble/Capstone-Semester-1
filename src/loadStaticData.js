@@ -1,32 +1,18 @@
-// src/loadStaticData.js
+// loadStaticData.js
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
-/**
- * This loader ONLY handles tabular sources (CSV/XLSX).
- *
- * HOW IT WORKS
- * ------------
- * - CSV files: imported with ?raw (string) → parsed with Papa → capped rows → labeled.
- * - XLSX files: imported with ?url (asset URL) → fetch ArrayBuffer → parse with xlsx → 
- *   iterate ALL sheets → cap rows per sheet → labeled per sheet.
- *
- * Add new files by following the "ADD MORE FILES" section at the bottom.
- */
 
-// ---------- IMPORT YOUR TABULAR FILES HERE ----------
-import dssCsvRaw from "./Data/dss-demographics-2021-sa2-june-2025.csv?raw"; // CSV as raw text
-import absUrl from "./Data/ABS_Retirement_Comparison.xlsx?url";            // Excel as URL
-import trpUrl from "./Data/Transition_Retirement_Plans.xlsx?url";          // Excel as URL
-// ---------------------------------------------------
+import dssCsvRaw from "./Data/dss-demographics-2021-sa2-june-2025.csv?raw"; 
+import absUrl from "./Data/ABS_Retirement_Comparison.xlsx?url";            
+import trpUrl from "./Data/Transition_Retirement_Plans.xlsx?url";          
 
-const ROW_CAP = 30; // cap per dataset or sheet to keep prompts responsive
 
-// ---- Simple in-module cache so we only parse once per page load ----
+const ROW_CAP = 100; // cap per dataset or sheet to keep prompts responsive
+
 let _cachedBlock = null;
 let _buildOncePromise = null;
 
-/** Parse a CSV raw string into array-of-objects and cap rows. */
 function parseCsvRawCapped(raw) {
   if (!raw) return [];
   const res = Papa.parse(raw, {
@@ -38,7 +24,6 @@ function parseCsvRawCapped(raw) {
   return rows.slice(0, ROW_CAP);
 }
 
-/** Fetch an .xlsx URL, parse ALL sheets to { sheetName: rows[] } with caps. */
 async function parseXlsxAllSheetsCapped(url) {
   if (!url) return {};
   const buf = await fetch(url).then((r) => r.arrayBuffer());
@@ -50,16 +35,13 @@ async function parseXlsxAllSheetsCapped(url) {
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
     out[sheetName] = rows.slice(0, ROW_CAP);
   }
-  return out; // e.g., { "Sheet1": [...], "Sheet2": [...] }
+  return out; 
 }
 
 /**
- * buildTabularReferenceBlock
- * --------------------------
  * Returns a single string that contains labeled snippets from:
  * - CSV sources
  * - ALL sheets of each XLSX source
- *
  * The string is meant to be appended to your static “Reference Information” block.
  * It is cached so you don’t re-parse files every time the user asks a question.
  */
@@ -70,7 +52,6 @@ export async function buildTabularReferenceBlock() {
   _buildOncePromise = (async () => {
     const parts = [];
 
-    // 1) CSV(s)
     const dssRows = parseCsvRawCapped(dssCsvRaw);
     if (dssRows.length) {
       parts.push(
@@ -79,7 +60,6 @@ export async function buildTabularReferenceBlock() {
       );
     }
 
-    // 2) XLSX: parse ALL sheets per workbook and label by sheet name
     const [absSheets, trpSheets] = await Promise.all([
       parseXlsxAllSheetsCapped(absUrl),
       parseXlsxAllSheetsCapped(trpUrl),
@@ -111,7 +91,7 @@ export async function buildTabularReferenceBlock() {
 }
 
 /**
- * ADD MORE FILES (optional)
+ * ADD MORE FILES (for later)
  * -------------------------
  * CSV:
  *   import myCsvRaw from "./Data/MyFile.csv?raw";
