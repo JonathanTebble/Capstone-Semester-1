@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
-import { sendToGemini } from "./geminiChat1";
+import { sendToGemini } from "./geminiChat";
 
 
 
