@@ -27,10 +27,10 @@ function LandingPage() {
   function linkifyParensUrlsToHtml(text) {
   if (!text) return "";
   return text.replace(
-    /\((https?:\/\/[^\s)]+)\)/g,
-    '(<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>)'
-  );
-}
+      /\((https?:\/\/[^\s)]+)\)/g,
+      '(<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>)'
+    );
+  }
 
 
   const typeResponse = (response, callback) => {
@@ -82,56 +82,56 @@ function LandingPage() {
 
 
 
-const handleSendMessage = async () => {
-  if (message.trim() && !isTyping) {
-    const userText = message.trim();
-    setMessages(prev => [...prev, { type: "user", text: userText }]);
-    setMessage("");
-    setIsTyping(true);
+  const handleSendMessage = async () => {
+    if (message.trim() && !isTyping) {
+      const userText = message.trim();
+      setMessages(prev => [...prev, { type: "user", text: userText }]);
+      setMessage("");
+      setIsTyping(true);
 
-    try {
-      const placeholderIndex = (() => {
-        let idx = -1;
-        setMessages(prev => {
-          const copy = [...prev, { type: "bot", text: "", isTyping: true }];
-          idx = copy.length - 1;
-          return copy;
-        });
-        return () => idx; // getter to avoid stale closure
-      })();
+      try {
+        const placeholderIndex = (() => {
+          let idx = -1;
+          setMessages(prev => {
+            const copy = [...prev, { type: "bot", text: "", isTyping: true }];
+            idx = copy.length - 1;
+            return copy;
+          });
+          return () => idx; // getter to avoid stale closure
+        })();
 
-      const plainReply = await sendToGemini(userText) || "";
+        const plainReply = await sendToGemini(userText) || "";
 
-      let i = 0;
-      const typeInterval = setInterval(() => {
-        i++;
-        setMessages(prev => {
-          const copy = [...prev];
-          const idx = placeholderIndex();
-          if (!copy[idx]) return prev;
-          copy[idx] = { ...copy[idx], text: plainReply.slice(0, i), isTyping: true };
-          return copy;
-        });
-        if (i >= plainReply.length) {
-          clearInterval(typeInterval);
-          const html = linkifyParensUrlsToHtml(plainReply);
+        let i = 0;
+        const typeInterval = setInterval(() => {
+          i++;
           setMessages(prev => {
             const copy = [...prev];
             const idx = placeholderIndex();
             if (!copy[idx]) return prev;
-            copy[idx] = { type: "bot", html, isTyping: false }; // final HTML bubble
+            copy[idx] = { ...copy[idx], text: plainReply.slice(0, i), isTyping: true };
             return copy;
           });
-          setIsTyping(false);
-        }
-      }, 20); // adjust speed
-    } catch (err) {
-      console.error(err);
-      setMessages(prev => [...prev, { type: "bot", text: "Something went wrong.", isTyping: false }]);
-      setIsTyping(false);
+          if (i >= plainReply.length) {
+            clearInterval(typeInterval);
+            const html = linkifyParensUrlsToHtml(plainReply);
+            setMessages(prev => {
+              const copy = [...prev];
+              const idx = placeholderIndex();
+              if (!copy[idx]) return prev;
+              copy[idx] = { type: "bot", html, isTyping: false }; // final HTML bubble
+              return copy;
+            });
+            setIsTyping(false);
+          }
+        }, 20); // adjust speed
+      } catch (err) {
+        console.error(err);
+        setMessages(prev => [...prev, { type: "bot", text: "Something went wrong.", isTyping: false }]);
+        setIsTyping(false);
+      }
     }
-  }
-};
+  };
 
 
 
@@ -399,7 +399,11 @@ const handleSendMessage = async () => {
   );
 }
 
+export default LandingPage;
+
+
 const container = document.createElement("div");
 document.body.appendChild(container);
 const root = ReactDOM.createRoot(container);
 root.render(<LandingPage />);
+
