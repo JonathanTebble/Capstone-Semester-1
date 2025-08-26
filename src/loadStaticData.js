@@ -2,114 +2,123 @@
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
+import dssCsvRaw from "./Data/dss-demographics-2021-sa2-june-2025.csv?raw";
+import absUrl from "./Data/ABS_Retirement_Comparison.xlsx?url";
+import trpUrl from "./Data/Transition_Retirement_Plans.xlsx?url";
 
-import dssCsvRaw from "./Data/dss-demographics-2021-sa2-june-2025.csv?raw"; 
-import absUrl from "./Data/ABS_Retirement_Comparison.xlsx?url";            
-import trpUrl from "./Data/Transition_Retirement_Plans.xlsx?url";          
 
+const MAX_MATCHES_PER_SHEET = 60;     // tune for recall vs size
+const MAX_CONTEXT_CHARS     = 12000;  // hard budget for prompt size
 
-const ROW_CAP = 100; // cap per dataset or sheet to keep prompts responsive
+let _csvCache = null;                 // DSS csv rows
+let _xlsxCache = null;                // { absSheets, trpSheets }
 
-let _cachedBlock = null;
-let _buildOncePromise = null;
-
-function parseCsvRawCapped(raw) {
+function parseCsvRaw(raw) {
   if (!raw) return [];
-  const res = Papa.parse(raw, {
+  const { data } = Papa.parse(raw, {
     header: true,
     skipEmptyLines: true,
     dynamicTyping: true,
   });
-  const rows = Array.isArray(res.data) ? res.data : [];
-  return rows.slice(0, ROW_CAP);
+  return Array.isArray(data) ? data : [];
 }
 
-async function parseXlsxAllSheetsCapped(url) {
-  if (!url) return {};
+async function loadXlsxAllSheets(url) {
   const buf = await fetch(url).then((r) => r.arrayBuffer());
   const wb = XLSX.read(buf, { type: "array" });
-
   const out = {};
   for (const sheetName of wb.SheetNames) {
     const sheet = wb.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-    out[sheetName] = rows.slice(0, ROW_CAP);
+    out[sheetName] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
   }
-  return out; 
+  return out;
+}
+
+function rowMatchesQuery(row, tokens) {
+  if (!tokens.length) return true; // if no tokens, allow; we cap later
+  const hay = JSON.stringify(row).toLowerCase();
+  return tokens.every((t) => hay.includes(t));
 }
 
 /**
- * Returns a single string that contains labeled snippets from:
- * - CSV sources
- * - ALL sheets of each XLSX source
- * The string is meant to be appended to your static “Reference Information” block.
- * It is cached so you don’t re-parse files every time the user asks a question.
+ * Build trimmed, labeled, query-relevant context.
+ * Returns a string safe to append to your system prompt.
  */
-export async function buildTabularReferenceBlock() {
-  if (_cachedBlock) return _cachedBlock;
-  if (_buildOncePromise) return _buildOncePromise;
+export async function getTabularContextForQuery(queryText) {
+  const tokens = (queryText || "")
+    .toLowerCase()
+    .split(/[^a-z0-9%]+/gi)
+    .filter(Boolean);
 
-  _buildOncePromise = (async () => {
-    const parts = [];
+  // Warm caches
+  if (!_csvCache) _csvCache = parseCsvRaw(dssCsvRaw);
+  if (!_xlsxCache) {
+    const [absSheets, trpSheets] = await Promise.all([
+      loadXlsxAllSheets(absUrl),
+      loadXlsxAllSheets(trpUrl),
+    ]);
+    _xlsxCache = { absSheets, trpSheets };
+  }
 
-    const dssRows = parseCsvRawCapped(dssCsvRaw);
-    if (dssRows.length) {
+  const parts = [];
+
+  // DSS CSV
+  if (_csvCache?.length) {
+    const matches = [];
+    for (const r of _csvCache) {
+      if (rowMatchesQuery(r, tokens)) {
+        matches.push(r);
+        if (matches.length >= MAX_MATCHES_PER_SHEET) break;
+      }
+    }
+    if (matches.length) {
       parts.push(
-        `--- DSS_Demographics.csv (first ${ROW_CAP} rows) ---\n` +
-          dssRows.map((r) => JSON.stringify(r)).join("\n")
+        `--- DSS_Demographics.csv (matches ${matches.length}) ---\n` +
+        matches.map((r) => JSON.stringify(r)).join("\n")
       );
     }
+  }
 
-    const [absSheets, trpSheets] = await Promise.all([
-      parseXlsxAllSheetsCapped(absUrl),
-      parseXlsxAllSheetsCapped(trpUrl),
-    ]);
-
-    for (const [sheetName, rows] of Object.entries(absSheets)) {
-      if (rows && rows.length) {
-        parts.push(
-          `--- ABS_Retirement_Comparison.xlsx / ${sheetName} (first ${ROW_CAP} rows) ---\n` +
-            JSON.stringify(rows)
-        );
+  // ABS workbook
+  for (const [sheet, rows] of Object.entries(_xlsxCache.absSheets)) {
+    let count = 0;
+    const matches = [];
+    for (const r of rows) {
+      if (rowMatchesQuery(r, tokens)) {
+        matches.push(r);
+        if (++count >= MAX_MATCHES_PER_SHEET) break;
       }
     }
+    if (matches.length) {
+      parts.push(
+        `--- ABS_Retirement_Comparison.xlsx / ${sheet} (matches ${matches.length}) ---\n` +
+        JSON.stringify(matches)
+      );
+    }
+  }
 
-    for (const [sheetName, rows] of Object.entries(trpSheets)) {
-      if (rows && rows.length) {
-        parts.push(
-          `--- Transition_Retirement_Plans.xlsx / ${sheetName} (first ${ROW_CAP} rows) ---\n` +
-            JSON.stringify(rows)
-        );
+  // Transition workbook
+  for (const [sheet, rows] of Object.entries(_xlsxCache.trpSheets)) {
+    let count = 0;
+    const matches = [];
+    for (const r of rows) {
+      if (rowMatchesQuery(r, tokens)) {
+        matches.push(r);
+        if (++count >= MAX_MATCHES_PER_SHEET) break;
       }
     }
+    if (matches.length) {
+      parts.push(
+        `--- Transition_Retirement_Plans.xlsx / ${sheet} (matches ${matches.length}) ---\n` +
+        JSON.stringify(matches)
+      );
+    }
+  }
 
-    _cachedBlock = parts.join("\n\n");
-    return _cachedBlock;
-  })();
-
-  return _buildOncePromise;
+  // Hard character budget (protect the model call)
+  let context = parts.join("\n\n");
+  if (context.length > MAX_CONTEXT_CHARS) {
+    context = context.slice(0, MAX_CONTEXT_CHARS) + "\n\n--- [context truncated] ---";
+  }
+  return context;
 }
-
-/**
- * ADD MORE FILES (for later)
- * -------------------------
- * CSV:
- *   import myCsvRaw from "./Data/MyFile.csv?raw";
- *   const myCsvRows = parseCsvRawCapped(myCsvRaw);
- *   parts.push(
- *     `--- MyFile.csv (first ${ROW_CAP} rows) ---\n` +
- *     myCsvRows.map(r => JSON.stringify(r)).join("\n")
- *   );
- *
- * XLSX:
- *   import myXlsxUrl from "./Data/MyWorkbook.xlsx?url";
- *   const mySheets = await parseXlsxAllSheetsCapped(myXlsxUrl);
- *   for (const [sheet, rows] of Object.entries(mySheets)) {
- *     if (rows.length) {
- *       parts.push(
- *         `--- MyWorkbook.xlsx / ${sheet} (first ${ROW_CAP} rows) ---\n` +
- *         JSON.stringify(rows)
- *       );
- *     }
- *   }
- */

@@ -3,26 +3,61 @@ import { GoogleGenAI } from "@google/genai";
 import contextData from "./selenium-web-scraper/src/context.json";
 import guide1 from "./Data/ATO.txt?raw";
 import scaTxt from "./Data/SuperConsumersAustralia.txt?raw";
-import { buildTabularReferenceBlock } from "./loadStaticData";
+import { getTabularContextForQuery } from "./loadStaticData";
 
-// Build the TXT reference block (now includes both files)
+// Static TXT reference block
 const txtData = `
 --- guide1.txt ---
 ${guide1}
 
 --- SuperConsumersAustralia.txt ---
 ${scaTxt}
-`;
+`.trim();
 
+// Prefer env var; falls back if needed (but do move to env in production)
 const ai = new GoogleGenAI({
-  apiKey: "AIzaSyBCM-WY7SxEACI95A3g34bGVVLEhJYmVJw",
+  apiKey: import.meta.env?.VITE_GEMINI_API_KEY || "AIzaSyBCM-WY7SxEACI95A3g34bGVVLEhJYmVJw",
 });
 
-/**
- * We instruct the model to output a hidden "CITES:" line listing the labels of
- * references it used (from either Reference Information or Scraped Sources Catalog).
- * We then map labels -> URLs and append EXACT "(url) (url)" at the end.
- */
+/** Dynamic/scraped labels → URLs */
+const SCRAPED_LABEL_TO_URL = [
+  { label: "Services Australia (Age Pension)", url: "https://www.servicesaustralia.gov.au/age-pension" },
+  { label: "ATO (Superannuation – Withdrawing and using your super)", url: "https://www.ato.gov.au/Individuals/Super/In-detail/Withdrawing-and-using-your-super" },
+  { label: "MoneySmart (Retirement income sources)", url: "https://moneysmart.gov.au/retirement-income-sources" },
+];
+
+/** Static label rules → URLs */
+const LABEL_TO_URL_RULES = [
+  { match: /^DSS_Demographics\.csv(?:\s*\/\s*.*)?$/i,
+    url: "https://data.gov.au/organization/department-of-social-services" },
+  { match: /^ABS_Retirement_Comparison\.xlsx\s*\/\s*.+/i,
+    url: "https://www.abs.gov.au/statistics/labour/employment-and-unemployment/retirement-and-retirement-intentions-australia" },
+  { match: /^Transition_Retirement_Plans\.xlsx\s*\/\s*.+/i,
+    url: "https://www.ato.gov.au/api/public/content/0-74828496-dead-4b1a-8503-ffbe95d37398?1755658690387" },
+  { match: /^(guide1|ATO)\.txt(?:\s*\/\s*.*)?$/i,
+    url: "https://www.ato.gov.au/individuals-and-families/jobs-and-employment-types/working-as-an-employee/leaving-the-workforce/planning-to-retire" },
+  { match: /^SuperConsumersAustralia\.txt(?:\s*\/\s*.*)?$/i,
+    url: "https://superconsumers.com.au/research/superannuation-death-benefit-delays-you-dont-get-paid-faster-if-you-pay-higher-fees/" },
+];
+
+function labelsToUrls(labels) {
+  const urls = [];
+  for (const label of labels) {
+    const found = SCRAPED_LABEL_TO_URL.find((s) => s.label === label.trim());
+    if (found?.url && !urls.includes(found.url)) urls.push(found.url);
+  }
+  for (const label of labels) {
+    const trimmed = label.trim();
+    for (const rule of LABEL_TO_URL_RULES) {
+      if (rule.match.test(trimmed)) {
+        if (!urls.includes(rule.url)) urls.push(rule.url);
+        break;
+      }
+    }
+  }
+  return urls;
+}
+
 const citationRules = `
 CITATION RULES (STRICT):
 - After your answer, output one line that begins with exactly: CITES:
@@ -36,61 +71,7 @@ CITATION RULES (STRICT):
 - If you used none of the provided references, output: CITES:
 `.trim();
 
-/** Dynamic/scraped labels → URLs (extend as needed) */
-const SCRAPED_LABEL_TO_URL = [
-  { label: "Services Australia (Age Pension)", url: "https://www.servicesaustralia.gov.au/age-pension" },
-  { label: "ATO (Superannuation – Withdrawing and using your super)", url: "https://www.ato.gov.au/Individuals/Super/In-detail/Withdrawing-and-using-your-super" },
-  { label: "MoneySmart (Retirement income sources)", url: "https://moneysmart.gov.au/retirement-income-sources" },
-];
-
-/** Static reference label rules (regex → URL) */
-const LABEL_TO_URL_RULES = [
-  {
-    match: /^DSS_Demographics\.csv(?:\s*\/\s*.*)?$/i,
-    url: "https://data.gov.au/organization/department-of-social-services",
-  },
-  {
-    match: /^ABS_Retirement_Comparison\.xlsx\s*\/\s*.+/i,
-    url: "https://www.abs.gov.au/statistics/labour/employment-and-unemployment/retirement-and-retirement-intentions-australia",
-  },
-  {
-    match: /^Transition_Retirement_Plans\.xlsx\s*\/\s*.+/i,
-    url: "https://www.ato.gov.au/api/public/content/0-74828496-dead-4b1a-8503-ffbe95d37398?1755658690387",
-  },
-  {
-    match: /^(guide1|ATO)\.txt(?:\s*\/\s*.*)?$/i,
-    url: "https://www.ato.gov.au/individuals-and-families/jobs-and-employment-types/working-as-an-employee/leaving-the-workforce/planning-to-retire",
-  },
-  {
-    match: /^SuperConsumersAustralia\.txt(?:\s*\/\s*.*)?$/i,
-    url: "https://superconsumers.com.au/research/superannuation-death-benefit-delays-you-dont-get-paid-faster-if-you-pay-higher-fees/",
-  },
-];
-
-// Map labels from CITES → unique URLs (dynamic first, then static rules)
-function labelsToUrls(labels) {
-  const urls = [];
-
-  for (const label of labels) {
-    const found = SCRAPED_LABEL_TO_URL.find((s) => s.label === label.trim());
-    if (found?.url && !urls.includes(found.url)) urls.push(found.url);
-  }
-
-  for (const label of labels) {
-    const trimmed = label.trim();
-    for (const rule of LABEL_TO_URL_RULES) {
-      if (rule.match.test(trimmed)) {
-        if (!urls.includes(rule.url)) urls.push(rule.url);
-        break;
-      }
-    }
-  }
-
-  return urls;
-}
-
-// Guardrails + scraped context + catalogs (model sees all of these)
-const systemInstruction = `
+const baseSystemInstruction = `
 You are a helpful retirement chatbot that answers questions about superannuation, age pension, and retirement planning in Australia. 
 You must only provide factual, general information based on publicly available government sources such as the ATO, Services Australia, and MoneySmart. 
 You must never give personal financial advice, predictions, or recommendations tailored to an individual. 
@@ -109,68 +90,93 @@ ${SCRAPED_LABEL_TO_URL.map((s) => `- ${s.label} :: ${s.url}`).join("\n")}
 
 Scraped Reference Context (read-only JSON):
 ${JSON.stringify(contextData, null, 2)}
-`;
+`.trim();
 
-// Lazy-init chat so we can await tabular refs first time only
-let _chatPromise;
-
-async function getChat() {
-  if (_chatPromise) return _chatPromise;
-
-  _chatPromise = (async () => {
-    const tabularRefs = await buildTabularReferenceBlock();
-
-    const finalSystemInstruction =
-      `${systemInstruction}\n\nReference Information:\n${txtData}` +
-      (tabularRefs ? `\n\n${tabularRefs}` : "");
-
-    return ai.chats.create({
-      model: "gemini-2.0-flash",
-      config: { systemInstruction: finalSystemInstruction },
-    });
-  })();
-
-  return _chatPromise;
+// —— Rate-limit friendly wrapper ——
+function parseRetryDelayMs(err) {
+  try {
+    const details = err?.error?.details || err?.details || [];
+    const retryInfo = details.find(d => d['@type']?.includes('google.rpc.RetryInfo'));
+    if (!retryInfo?.retryDelay) return null;
+    // retryDelay like "47s" or "1.2s"
+    const m = String(retryInfo.retryDelay).match(/^(\d+(?:\.\d+)?)s$/i);
+    return m ? Math.ceil(parseFloat(m[1]) * 1000) : null;
+  } catch { return null; }
 }
 
+async function withRateLimitRetry(fn, { retries = 2 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try { return await fn(); }
+    catch (err) {
+      lastErr = err;
+      const code = err?.error?.code || err?.status || err?.code;
+      const is429 = Number(code) === 429 || err?.message?.includes("Too Many Requests");
+      if (!is429 || attempt === retries) throw lastErr;
 
-// Make "(https://...)" clickable while preserving parentheses + spacing
-function toHtmlWithClickableParensUrls(textWithParensUrls) {
-  if (!textWithParensUrls) return "";
-  return textWithParensUrls.replace(
+      const delay = parseRetryDelayMs(err) ?? Math.min(2000 * (attempt + 1), 8000);
+      // eslint-disable-next-line no-console
+      console.warn(`Rate-limited (429). Retrying in ${Math.round(delay/1000)}s...`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
+// — Formatting helpers —
+function toHtmlWithClickableParensUrls(text) {
+  if (!text) return "";
+  return text.replace(
     /\((https?:\/\/[^\s)]+)\)/g,
     '(<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>)'
   );
 }
 
-
-// Take model text, pull CITES line, append EXACT " (url) (url)" at the end
 function appendParensUrlsFromCites(fullText) {
   const lines = (fullText || "").split(/\r?\n/);
   const citesIdx = lines.findIndex((l) => l.trim().toUpperCase().startsWith("CITES:"));
   const citesLine = citesIdx >= 0 ? lines[citesIdx].trim() : "CITES:";
   const visibleLines = citesIdx >= 0 ? lines.filter((_, i) => i !== citesIdx) : lines;
 
-  const labelsPart = citesLine.slice(6).trim(); // after "CITES:"
-  const labels = labelsPart
-    ? labelsPart.split("|").map((s) => s.trim()).filter(Boolean)
-    : [];
+  const labelsPart = citesLine.slice(6).trim();
+  const labels = labelsPart ? labelsPart.split("|").map((s) => s.trim()).filter(Boolean) : [];
 
   const urls = labelsToUrls(labels);
   if (!urls.length) return visibleLines.join("\n").trim();
 
-  const tail = " " + urls.map((u) => `(${u})`).join(" "); // EXACT format: (url) (url)
+  const tail = " " + urls.map((u) => `(${u})`).join(" ");
   return visibleLines.join("\n").trim() + tail;
 }
 
-// Public API: returns plain text with "(url)" appended
+// — Public API —
 export async function sendToGemini(userInput) {
-  const chat = await getChat();
-  const result = await chat.sendMessage({ message: userInput });
-  return appendParensUrlsFromCites(result.text || "");
+  try {
+    // Build query-aware tabular context for THIS question
+    const tabularRefs = await getTabularContextForQuery(userInput);
+
+    // Compose systemInstruction with static TXT + filtered tables
+    const systemInstruction =
+      `${baseSystemInstruction}\n\nReference Information:\n${txtData}` +
+      (tabularRefs ? `\n\n${tabularRefs}` : "");
+
+    // Create chat and send message with rate-limit retries
+    const chat = await ai.chats.create({
+      model: "gemini-2.0-flash",
+      config: { systemInstruction },
+    });
+
+    const result = await withRateLimitRetry(
+      () => chat.sendMessage({ message: userInput }),
+      { retries: 2 }
+    );
+
+    return appendParensUrlsFromCites(result.text || "");
+  } catch (err) {
+    console.error("sendToGemini error:", err);
+    return "Sorry—something went wrong fetching an answer. Please try again in a moment.";
+  }
 }
 
-// Optional: HTML version that makes "(https://...)" clickable
 export async function sendToGeminiHtml(userInput) {
   const text = await sendToGemini(userInput);
   return toHtmlWithClickableParensUrls(text);
