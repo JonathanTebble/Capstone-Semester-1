@@ -3,8 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
 
-import { sendToGeminiHtml } from "./geminiChat1";
-// import { sendToGemini } from "./geminiChat"; // leave commented or delete if not used
+import { sendToGeminiHtml } from "./geminiChat";
 
 function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
