@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
-import { sendToGemini } from "./geminiChat1";
+import { sendToGeminiHtml } from "./geminiChat1";
 
 function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,12 +23,11 @@ function LandingPage() {
     }
   };
 
-  function linkifyParensUrlsToHtml(text) {
-    if (!text) return "";
-    return text.replace(
-      /\((https?:\/\/[^\s)]+)\)/g,
-      '(<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>)'
-    );
+  function stripHtmlToText(html) {
+    if (!html) return "";
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return (div.textContent || div.innerText || "").trim();
   }
 
   const handleSendMessage = async () => {
@@ -39,7 +38,6 @@ function LandingPage() {
       setIsTyping(true);
 
       try {
-        // placeholder bot bubble
         const placeholderIndex = (() => {
           let idx = -1;
           setMessages((prev) => {
@@ -50,7 +48,8 @@ function LandingPage() {
           return () => idx;
         })();
 
-        const plainReply = (await sendToGemini(userText)) || "";
+        const htmlReply = (await sendToGeminiHtml(userText)) || "";
+        const plainForTyping = stripHtmlToText(htmlReply);
 
         let i = 0;
         const typeInterval = setInterval(() => {
@@ -59,17 +58,16 @@ function LandingPage() {
             const copy = [...prev];
             const idx = placeholderIndex();
             if (!copy[idx]) return prev;
-            copy[idx] = { ...copy[idx], text: plainReply.slice(0, i), isTyping: true };
+            copy[idx] = { ...copy[idx], text: plainForTyping.slice(0, i), isTyping: true };
             return copy;
           });
-          if (i >= plainReply.length) {
+          if (i >= plainForTyping.length) {
             clearInterval(typeInterval);
-            const html = linkifyParensUrlsToHtml(plainReply);
             setMessages((prev) => {
               const copy = [...prev];
               const idx = placeholderIndex();
               if (!copy[idx]) return prev;
-              copy[idx] = { type: "bot", html, isTyping: false };
+              copy[idx] = { type: "bot", html: htmlReply, isTyping: false };
               return copy;
             });
             setIsTyping(false);
@@ -98,7 +96,6 @@ function LandingPage() {
     setIsLarge(false);
   };
 
-  // If a chat is already started, render full chat UI
   if (showChatPage) {
     return (
       <div className={`chatbox ${isLarge ? "chatbox-large" : ""}`}>
@@ -174,11 +171,11 @@ function LandingPage() {
             if (msg.isTyping && (!msg.text || msg.text.length === 0)) {
               return (
                 <div key={idx} className="chatbox-typing-row">
-                <span className="typing-indicator">
-                  <span className="typing-dot"></span>
-                  <span className="typing-dot"></span>
-                  <span className="typing-dot"></span>
-                </span>
+                  <span className="typing-indicator">
+                    <span className="typing-dot"></span>
+                    <span className="typing-dot"></span>
+                    <span className="typing-dot"></span>
+                  </span>
                 </div>
               );
             }
@@ -213,6 +210,7 @@ function LandingPage() {
 
         <div className="chatbox-input-container">
           <input
+            id="chat-input"
             type="text"
             placeholder="Ask anything here!"
             className="chatbox-chat-input"
@@ -294,26 +292,26 @@ function LandingPage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <label>
-                Name
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  className="chatbox-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </label>
-              <label>
-                Location
-                <input
-                  type="text"
-                  placeholder="e.g. Australia or NZ"
-                  className="chatbox-input"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                />
-              </label>
+              <label htmlFor="name-input">Name</label>
+              <input
+                id="name-input"
+                type="text"
+                placeholder="Enter your name"
+                className="chatbox-input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+
+              <label htmlFor="location-input">Location</label>
+              <input
+                id="location-input"
+                type="text"
+                placeholder="e.g. Australia or NZ"
+                className="chatbox-input"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
+
               <button className="chatbox-button" onClick={handleStartChat}>
                 Start Chat →
               </button>
@@ -325,7 +323,6 @@ function LandingPage() {
               </p>
             </div>
           </div>
-          {/* Closing div for the chatbox when isOpen is true */}
         </div>
       )}
     </>
@@ -335,12 +332,10 @@ function LandingPage() {
 export default LandingPage;
 
 /**
- * Safe self-mount: run once after DOM ready, clean up on HMR.
- * If you add a proper main.jsx later, delete everything below.
+ * Safe self-mount: run once after DOM ready
  */
 (function mountOnce() {
   if (typeof window === "undefined") return;
-
   const MOUNT_ID = "terah-standalone-root";
   function doMount() {
     let container = document.getElementById(MOUNT_ID);
@@ -354,14 +349,11 @@ export default LandingPage;
       container.__root.render(<LandingPage />);
     }
   }
-
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", doMount, { once: true });
   } else {
     doMount();
   }
-
-  // HMR dispose: unmount to prevent duplicate roots on Fast Refresh
   if (import.meta && import.meta.hot) {
     import.meta.hot.dispose(() => {
       const el = document.getElementById(MOUNT_ID);
