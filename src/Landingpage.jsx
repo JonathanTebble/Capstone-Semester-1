@@ -2,7 +2,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
+<<<<<<< HEAD
 import { sendToGeminiHtml } from "./geminiChat1";
+=======
+import { sendToGemini } from "./geminiChat";
+
+
+>>>>>>> origin/static
 
 function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
