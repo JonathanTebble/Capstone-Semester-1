@@ -1,18 +1,15 @@
-// geminiChat1.jsx (merged)
+// src/geminiChat.jsx (merged)
 // — Keeps your reference/citation pipeline
-// — Adds optional proofread stage compatible with your teammate’s intent
 
 import { GoogleGenAI } from "@google/genai";
 import contextData from "./selenium-web-scraper/src/context.json";
 
-// Your local text sources (kept)
 import guide1 from "./Data/ATO.txt?raw";
 import scaTxt from "./Data/SuperConsumersAustralia.txt?raw";
 
-// Your table context builder (kept)
 import { getTabularContextForQuery } from "./loadStaticData";
 
-// Centralised citation helpers (kept)
+// Centralised citation helpers (unchanged)
 import {
   SCRAPED_LABEL_TO_URL,
   canonicalizeLabel,
@@ -25,7 +22,7 @@ import {
 } from "./utils/citations";
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Targeted text snippets (ATO/SCA) — your behaviour, tidied
+// Targeted text snippets
 // ──────────────────────────────────────────────────────────────────────────────
 const TEXT_SNIPPET_MAX_PER_SOURCE = 6;
 const TEXT_SNIPPET_MAX_CHARS_TOTAL = 8000;
@@ -70,7 +67,6 @@ function buildTextSnippetsForQuery(queryText) {
   return text;
 }
 
-// Static TXT block intro (kept)
 const txtDataIntro = `
 --- guide1.txt ---
 (See targeted ATO.txt snippets below.)
@@ -80,14 +76,13 @@ const txtDataIntro = `
 `.trim();
 
 // ──────────────────────────────────────────────────────────────────────────────
-/** API client */
-// Prefer env var; fallback left in for now (move to env for production)
+// Gemini client 
+// ──────────────────────────────────────────────────────────────────────────────
 const ai = new GoogleGenAI({
   apiKey: import.meta.env?.VITE_GEMINI_API_KEY || "AIzaSyBCM-WY7SxEACI95A3g34bGVVLEhJYmVJw",
 });
 
-// ──────────────────────────────────────────────────────────────────────────────
-/** System instruction + citing rules (kept) */
+// Keep citation behaviour in main system instruction so HTML linking works
 const citationRules = `
 CITATION RULES (STRICT):
 - Prefer paired cites: [[cite: LABEL]]that short phrase[[/cite]]. Standalone [[cite: LABEL]] is allowed.
@@ -97,15 +92,16 @@ CITATION RULES (STRICT):
 - Do NOT print raw URLs in the answer.
 `.trim();
 
-const baseSystemInstruction = `
-You are a helpful retirement chatbot that answers questions about superannuation, age pension, and retirement planning in Australia. 
-Only provide factual, general information from ATO, Services Australia, and MoneySmart. 
+const systemInstruction = `
+You are a helpful retirement chatbot that answers questions about superannuation, age pension, and retirement planning in Australia.
+Only provide factual, general information from government sources (ATO, Services Australia, MoneySmart, etc).
 Never give personal financial advice or tailored recommendations. If asked, decline and refer to a licensed financial adviser.
 
-Style:
-- Be concise and specific. Use short bullets or sentences.
-- No markdown emphasis or emojis.
-- Every bullet/paragraph must include at least one citation.
+Always:
+- Avoid personalising answers or making assumptions about the user's situation.
+- Prioritise clarity, empathy, and actionable general guidance specific to Australian retirement laws.
+- Respond in short, clear, and concise sentences.
+- Do not italicise or bold text, and do not use emojis.
 
 ${citationRules}
 
@@ -116,8 +112,6 @@ Scraped Reference Context (read-only JSON):
 ${JSON.stringify(contextData, null, 2)}
 `.trim();
 
-// ──────────────────────────────────────────────────────────────────────────────
-/** Optional proofread pass (mate’s idea), available on demand */
 const proofreadInstruction = `
 Proofread the following text.
 1) If any details are incorrect, rewrite the text to ensure accuracy.
@@ -126,109 +120,77 @@ Proofread the following text.
 Return the final, proofread text or "ACCEPTABLE".
 `.trim();
 
-async function proofreadText(rawText) {
-  try {
-    const chat = await ai.chats.create({
-      model: "gemini-2.0-flash",
-      config: { systemInstruction: proofreadInstruction },
-    });
-    const res = await chat.sendMessage({ message: `Text to proofread:\n${rawText}`.trim() });
-    const out = (res.text || "").trim();
-    if (out.toUpperCase() === "ACCEPTABLE") return rawText;
-    return out;
-  } catch (e) {
-    // On any proofread failure, fall back to the original
-    console.warn("Proofread failed, returning original text:", e);
-    return rawText;
-  }
-}
+// Create the 2 chat instances 
+const chat = ai.chats.create({
+  model: "gemini-2.0-flash",
+  config: { systemInstruction },
+});
 
-// Allow enabling proofread globally via env if desired
-const USE_PROOFREADER_DEFAULT =
-  String(import.meta.env?.VITE_USE_PROOFREADER || "").toLowerCase() === "true";
+const proofreadChat = ai.chats.create({
+  model: "gemini-2.0-flash",
+  config: { systemInstruction: proofreadInstruction },
+});
 
 // ──────────────────────────────────────────────────────────────────────────────
-/** 429 handling (kept) */
-function parseRetryDelayMs(err) {
-  try {
-    const details = err?.error?.details || err?.details || [];
-    const retryInfo = details.find((d) => d["@type"]?.includes("google.rpc.RetryInfo"));
-    if (!retryInfo?.retryDelay) return null;
-    const m = String(retryInfo.retryDelay).match(/^(\d+(?:\.\d+)?)s$/i);
-    return m ? Math.ceil(parseFloat(m[1]) * 1000) : null;
-  } catch { return null; }
-}
-async function withRateLimitRetry(fn, { retries = 2 } = {}) {
-  let lastErr;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try { return await fn(); }
-    catch (err) {
-      lastErr = err;
-      const code = err?.error?.code || err?.status || err?.code;
-      const is429 = Number(code) === 429 || err?.message?.includes("Too Many Requests");
-      if (!is429 || attempt === retries) throw lastErr;
-      const delay = parseRetryDelayMs(err) ?? Math.min(2000 * (attempt + 1), 8000);
-      await new Promise(r => setTimeout(r, delay));
-    }
-  }
-  throw lastErr;
-}
-
+// Main API (ALWAYS runs the proofreader; prints exactly as your mate described)
 // ──────────────────────────────────────────────────────────────────────────────
-/** Core call: build context → call Gemini → (optional) proofread */
-// Returns plain TEXT (no HTML)
-export async function sendToGemini(userInput, { proofread = USE_PROOFREADER_DEFAULT } = {}) {
+export async function sendToGemini(userInput) {
   try {
     const textSnippets = buildTextSnippetsForQuery(userInput);
     const tabularRefs  = await getTabularContextForQuery(userInput);
 
-    const systemInstruction =
-      `${baseSystemInstruction}\n\nReference Information:\n${txtDataIntro}` +
-      (textSnippets ? `\n\n${textSnippets}` : "") +
-      (tabularRefs  ? `\n\n${tabularRefs}`  : "");
+    const message = `
+${userInput}
 
-    const chat = await ai.chats.create({
-      model: "gemini-2.0-flash",
-      config: { systemInstruction },
-    });
+[Reference Information]
+${txtDataIntro}
 
-    const result = await withRateLimitRetry(
-      () => chat.sendMessage({ message: userInput }),
-      { retries: 2 }
-    );
+${textSnippets}
 
-    const text = (result.text || "").trim();
-    if (!proofread) return text;
-    return await proofreadText(text);
+${tabularRefs}
+`.trim();
+
+    // Stage 1: initial response
+    const result = await chat.sendMessage({ message });
+    const initialText = (result.text || "").trim();
+
+    // Stage 2: proofread decision
+    const proofreadMessage = `Text to proofread:\n${initialText}`.trim();
+    const proofreadResult = await proofreadChat.sendMessage({ message: proofreadMessage });
+    const decisionRaw = (proofreadResult.text || "").trim();
+
+    // EXACT console behaviour:
+    // - If acceptable → print "acceptable"
+    // - Else → print the rewritten text
+    const acceptable = /^ACCEPTABLE\b/i.test(decisionRaw);
+    if (acceptable) {
+      console.log("acceptable");
+      return initialText; // show original to the user
+    } else {
+      console.log(decisionRaw);
+      return decisionRaw; // show rewritten to the user
+    }
   } catch (err) {
-    console.error("sendToGemini error:", err);
+    console.error("Error in sendToGemini:", err);
     return "Sorry—something went wrong fetching an answer. Please try again in a moment.";
   }
 }
 
-// Returns HTML with compact inline citations (2–3 words with tooltip)
-export async function sendToGeminiHtml(userInput, { proofread = USE_PROOFREADER_DEFAULT } = {}) {
-  const full = await sendToGemini(userInput, { proofread });
+// Keep your inline-citation HTML post-processing for the UI
+export async function sendToGeminiHtml(userInput) {
+  const full = await sendToGemini(userInput);
 
-  // 1) URLs from the CITES line
+  // 1) extract labels from the CITES line → urls
   const labels = extractCitesLabels(full).map(canonicalizeLabel);
   const urls = labelsToUrls(labels);
 
-  // 2) Remove visible CITES line
+  // 2) remove visible CITES line
   const visible = stripCitesLine(full);
 
-  // 3) Turn cites into short anchors (2–3 words max)
-  let html = pairedCitesToHtmlLimited(visible);       // paired cites → wrap small span
-  html     = wrapStandaloneCitesTwoOrThree(html);     // standalone cites → wrap 2–3 words before tag
-  html     = addFallbackLinks(html, urls);            // add one compact link where still missing
+  // 3) make short links (2–3 words) + tooltip
+  let html = pairedCitesToHtmlLimited(visible);
+  html     = wrapStandaloneCitesTwoOrThree(html);
+  html     = addFallbackLinks(html, urls);
 
   return html;
-}
-
-// Convenience aliases compatible with teammate expectations
-export async function sendToGeminiProofread(userInput) {
-  return sendToGemini(userInput, { proofread: true });
-}
-export async function sendToGeminiHtmlProofread(userInput) {
-  return sendToGeminiHtml(userInput, { proofread: true });
 }

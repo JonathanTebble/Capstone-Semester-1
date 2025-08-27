@@ -21,7 +21,7 @@ export const LABEL_TO_URL_RULES = [
     url: "https://superconsumers.com.au/research/superannuation-death-benefit-delays-you-dont-get-paid-faster-if-you-pay-higher-fees/" },
 ];
 
-// Normalise near-miss labels to the canon we map above.
+// Canonicalise near-miss labels
 export function canonicalizeLabel(label) {
   const s = String(label || "").trim();
   if (/moneysmart/i.test(s) && /tax/i.test(s)) return "MoneySmart (Tax and super)";
@@ -67,15 +67,68 @@ export function stripCitesLine(fullText) {
     .trim();
 }
 
-// Keywords we prefer to wrap if present (keeps anchors short & meaningful)
+// Keep anchors short & meaningful
 const KEYWORDS = [
   { re: /\btax[- ]free component\b/i,   label: "ATO (Tax on super income streams)" },
   { re: /\btaxable component\b/i,       label: "ATO (Tax on super income streams)" },
   { re: /\b(taxed|untaxed)\s+(source|fund)\b/i, label: "ATO (Tax on super income streams)" },
-  { re: /\b15%\s*offset\b/i,            label: "ATO (Tax on super income streams)" },
   { re: /\bsuper(annuation)? income stream\b/i, label: "ATO (Tax on super income streams)" },
-  { re: /\btransition to retirement\b/i,label: "ATO (Tax on super income streams)" },
 ];
+
+// dedupe & clamp labels to max (default 4)
+export function clampLabelsUnique(labels, max = 4) {
+  const seen = new Set();
+  const out = [];
+  for (const raw of labels || []) {
+    const c = canonicalizeLabel(raw);
+    if (!seen.has(c)) {
+      seen.add(c);
+      out.push(c);
+      if (out.length >= max) break;
+    }
+  }
+  return out;
+}
+
+// Ndrop any [[cite: …]] tags whose labels are NOT in final CITES list
+export function pruneCiteTagsNotInCites(text, allowedLabels) {
+  if (!text) return "";
+  const allowed = new Set((allowedLabels || []).map(canonicalizeLabel));
+  // paired
+  text = text.replace(
+    /\[\[cite:\s*([^\]]+?)\s*\]\]([\s\S]*?)\[\[\/cite\]\]/gi,
+    (_m, raw, inner) => (allowed.has(canonicalizeLabel(raw)) ? _m : inner)
+  );
+  // standalone
+  text = text.replace(
+    /\[\[cite:\s*([^\]]+?)\s*\]\]/gi,
+    (_m, raw) => (allowed.has(canonicalizeLabel(raw)) ? _m : "")
+  );
+  return text;
+}
+
+// // pick a sensible fallback label if the model forgot to cite but clearly used a domain topic
+// export function guessFallbackLabelFromText(text) {
+//   const t = String(text || "");
+//   if (/age\s+pension/i.test(t)) return "Services Australia (Age Pension)";
+//   if (/(income stream|transition to retirement|TRIS|tax[- ]free component|taxable component|untaxed|taxed)/i.test(t))
+//     return "ATO (Tax on super income streams)";
+//   if (/\btax\b/i.test(t) && /\bsuper\b/i.test(t))
+//     return "MoneySmart (Tax and super)";
+//   return "MoneySmart (Retirement income sources)";
+// }
+
+// append a standalone cite at the end of the last non-empty line
+export function insertStandaloneCiteAtEnd(text, label) {
+  const lines = String(text || "").split(/\r?\n/);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (lines[i].trim()) {
+      lines[i] = `${lines[i].trim()} [[cite: ${canonicalizeLabel(label)}]]`;
+      break;
+    }
+  }
+  return lines.join("\n");
+}
 
 // Wrap first 1–3 words or a matched keyword span with an <a> link
 function wrapSmallSpan(text, href, label) {
@@ -97,7 +150,7 @@ function wrapSmallSpan(text, href, label) {
        + text.slice(0, j) + `</a>` + text.slice(j);
 }
 
-// [[cite: LABEL]]…[[/cite]] → anchor only 2–3 words (not whole sentences)
+// [[cite: LABEL]]…[[/cite]] → anchor only 2–3 words
 export function pairedCitesToHtmlLimited(text) {
   if (!text) return "";
   return text.replace(
@@ -111,7 +164,7 @@ export function pairedCitesToHtmlLimited(text) {
   );
 }
 
-// Standalone [[cite: LABEL]] → wrap 2–3 words *before* the tag (or last keyword/number)
+// Standalone [[cite: LABEL]] → wrap 2–3 words before tag (or last keyword/number)
 export function wrapStandaloneCitesTwoOrThree(html) {
   if (!html) return "";
   const citeRe = /\[\[cite:\s*([^\]]+?)\s*\]\]/i;
@@ -131,7 +184,7 @@ export function wrapStandaloneCitesTwoOrThree(html) {
       // last keyword span in `before`
       let replaced = false;
       for (const { re, label: lbl } of KEYWORDS) {
-        const all = [...before.matchAll(new RegExp(re.source, re.flags + (re.flags.includes("g") ? "" : "g")))];
+        const all = [...before.matchAll(new RegExp(re.source, re.flags + (re.flags.includes("g") ? "" : "g"))) ];
         if (all.length) {
           const last = all[all.length - 1];
           const si = last.index, sj = si + last[0].length;
@@ -170,62 +223,65 @@ export function wrapStandaloneCitesTwoOrThree(html) {
   return out.join("\n");
 }
 
-// Add a single compact link on lines with no links (keyword→number→first 1–3 words)
-export function addFallbackLinks(html, urls) {
-  if (!html) return "";
-  const prefer = [
-    "ATO (Tax on super income streams)",
-    "ATO (Superannuation – Withdrawing and using your super)",
-    "MoneySmart (Tax and super)",
-  ];
-  let primary = null;
-  for (const lab of prefer) {
-    const [u] = labelsToUrls([lab]); if (u && urls.includes(u)) { primary = u; break; }
-  }
-  primary ||= urls[0] || labelsToUrls(["ATO (Tax on super income streams)"])[0];
+// Keep this exported for compatibility, not use anymore.
+export function addFallbackLinks(html) { return html || ""; }
 
-  const lines = html.split(/\r?\n/);
-  const out = [];
+// export function addFallbackLinks(html, urls) {
+//   if (!html) return "";
+//   const prefer = [
+//     "ATO (Tax on super income streams)",
+//     "ATO (Superannuation – Withdrawing and using your super)",
+//     "MoneySmart (Tax and super)",
+//   ];
+//   let primary = null;
+//   for (const lab of prefer) {
+//     const [u] = labelsToUrls([lab]); if (u && urls.includes(u)) { primary = u; break; }
+//   }
+//   primary ||= urls[0] || labelsToUrls(["ATO (Tax on super income streams)"])[0];
 
-  for (let line of lines) {
-    if (/<a\s+[^>]*class=["']inline-cite["'][^>]*>/i.test(line)) { out.push(line); continue; }
+//   const lines = html.split(/\r?\n/);
+//   const out = [];
 
-    // keyword
-    let done = false;
-    for (const { re, label } of KEYWORDS) {
-      const m = line.match(re);
-      if (m) {
-        const i = m.index, j = i + m[0].length;
-        const url = labelsToUrls([label])[0] || primary;
-        if (url) {
-          line = line.slice(0, i)
-            + `<a class="inline-cite" href="${url}" target="_blank" rel="noopener noreferrer" data-url="${url}" data-label="${label}">`
-            + line.slice(i, j) + `</a>` + line.slice(j);
-          done = true; break;
-        }
-      }
-    }
-    if (!done && primary) {
-      // number
-      const num = line.match(/(\$?\b\d[\d,]*(?:\.\d+)?%?\b)/);
-      if (num) {
-        const i = num.index, j = i + num[1].length;
-        line = line.slice(0, i)
-          + `<a class="inline-cite" href="${primary}" target="_blank" rel="noopener noreferrer" data-url="${primary}" data-label="Source">`
-          + line.slice(i, j) + `</a>` + line.slice(j);
-        done = true;
-      }
-    }
-    if (!done && primary) {
-      // first 1–3 words
-      const w = line.match(/^(\S+(?:\s+\S+){0,2})/);
-      if (w) {
-        const j = w[0].length;
-        line = `<a class="inline-cite" href="${primary}" target="_blank" rel="noopener noreferrer" data-url="${primary}" data-label="Source">`
-          + line.slice(0, j) + `</a>` + line.slice(j);
-      }
-    }
-    out.push(line);
-  }
-  return out.join("\n");
-}
+//   for (let line of lines) {
+//     if (/<a\s+[^>]*class=["']inline-cite["'][^>]*>/i.test(line)) { out.push(line); continue; }
+
+//     // keyword
+//     let done = false;
+//     for (const { re, label } of KEYWORDS) {
+//       const m = line.match(re);
+//       if (m) {
+//         const i = m.index, j = i + m[0].length;
+//         const url = labelsToUrls([label])[0] || primary;
+//         if (url) {
+//           line = line.slice(0, i)
+//             + `<a class="inline-cite" href="${url}" target="_blank" rel="noopener noreferrer" data-url="${url}" data-label="${label}">`
+//             + line.slice(i, j) + `</a>` + line.slice(j);
+//           done = true; break;
+//         }
+//       }
+//     }
+//     if (!done && primary) {
+//       // number
+//       const num = line.match(/(\$?\b\d[\d,]*(?:\.\d+)?%?\b)/);
+//       if (num) {
+//         const i = num.index, j = i + num[1].length;
+//         line = line.slice(0, i)
+//           + `<a class="inline-cite" href="${primary}" target="_blank" rel="noopener noreferrer" data-url="${primary}" data-label="Source">`
+//           + line.slice(i, j) + `</a>` + line.slice(j);
+//         done = true;
+//       }
+//     }
+//     if (!done && primary) {
+//       // first 1–3 words
+//       const w = line.match(/^(\S+(?:\s+\S+){0,2})/);
+//       if (w) {
+//         const j = w[0].length;
+//         line = `<a class="inline-cite" href="${primary}" target="_blank" rel="noopener noreferrer" data-url="${primary}" data-label="Source">`
+//           + line.slice(0, j) + `</a>` + line.slice(j);
+//       }
+//     }
+//     out.push(line);
+//   }
+//   return out.join("\n");
+// }
+

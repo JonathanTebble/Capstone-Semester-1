@@ -4,6 +4,7 @@ import ReactDOM from "react-dom/client";
 import "./App.css";
 
 import { sendToGeminiHtml } from "./geminiChat";
+// import { sendToGemini } from "./geminiChat"; // old
 
 function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,12 +25,20 @@ function LandingPage() {
     }
   };
 
-  function stripHtmlToText(html) {
-    if (!html) return "";
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    return (div.textContent || div.innerText || "").trim();
-  }
+function stripHtmlToText(html) {
+  if (!html) return "";
+  const cleaned = html
+    .replace(/\[\[cite:\s*[^\]]+?\s*\]\]/gi, "")
+    .replace(/\[\[\/cite\]\]/gi, "")
+    .replace(/^\s*CITES:.*$/gmi, "")
+    .replace(/^\s*ACCEPTABLE\s*$/gmi, "")    // <— new
+    .replace(/\n+\s*ACCEPTABLE\s*$/i, "");   // <— new
+  const div = document.createElement("div");
+  div.innerHTML = cleaned;
+  return (div.textContent || div.innerText || "").trim();
+}
+
+
 
   const handleSendMessage = async () => {
     if (message.trim() && !isTyping) {
@@ -49,7 +58,7 @@ function LandingPage() {
           return () => idx;
         })();
 
-        const htmlReply = (await sendToGeminiHtml(userText)) || "";
+        const htmlReply = (await sendToGeminiHtml(userText, { proofread: true })) || "";
         const plainForTyping = stripHtmlToText(htmlReply);
 
         let i = 0;
