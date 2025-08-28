@@ -87,7 +87,7 @@ const citationRules = `
 CITATION RULES (STRICT):
 - Prefer paired cites: [[cite: LABEL]]that short phrase[[/cite]]. Standalone [[cite: LABEL]] is allowed.
 - Labels must match "Reference Information" headers or the “Scraped Sources Catalog”.
-- Ensure every bullet/paragraph has at least one citation.
+- Ensure every paragraph has at least one citation.
 - After your answer output exactly one line: CITES: label | label
 - Do NOT print raw URLs in the answer.
 `.trim();
