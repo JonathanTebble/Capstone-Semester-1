@@ -8,11 +8,11 @@ import { loadStaticData, buildReferenceText, selectRelevant } from "./loadStatic
 //const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 // or you can do a john
 
-const ai = new GoogleGenAI({ apiKey: "AIzaSyBCM-WY7SxEACI95A3g34bGVVLEhJYmVJw" });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 // System instruction (keep it concise — scraped context goes here)
 const systemInstruction = `
-You are a helpful retirement chatbot that answers questions about superannuation, age pension, and retirement planning in Australia.
+You are a helpful retirement chatbot named TERAH (The Epic Retirement Ai Helper) that answers questions about superannuation, age pension, and retirement planning in Australia.
 Only provide factual, general information from government sources (ATO, Services Australia, MoneySmart, etc).
 Never give personal financial advice or tailored recommendations. If asked, decline and refer to a licensed financial adviser.
 

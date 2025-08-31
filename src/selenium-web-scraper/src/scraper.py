@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import undetected_chromedriver as uc
 import random
 
-GEMINI_API_KEY = "AIzaSyBCM-WY7SxEACI95A3g34bGVVLEhJYmVJw"  # Replace with env var for production
+GEMINI_API_KEY = os.getenv("VITE_GEMINI_API_KEY")  
 CONTEXT_JSON_PATH = os.path.join(os.path.dirname(__file__), "context.json")
 
 SOURCES = [
