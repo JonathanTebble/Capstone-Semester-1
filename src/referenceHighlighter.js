@@ -1,38 +1,41 @@
 // src/referenceHighlighter.js
 //
-// wrap up-to-3-word matching substrings with <a> links to the
-// correct source URLs. Hover tooltips use the anchor's title attribute.
-// We only link text that clearly appears in BOTH (response & source).
-//
-
+// Sentence-level attribution + strict linkable phrase rules:
+// - Pick ONE best source section per sentence.
+// - Only link phrases from that section.
+// - Only link meaningful n-grams (1–3 words) that contain a number/%
+//   or at least one non-stopword (and not on a denylist).
+// - Max one link per source across the whole message.
 
 import { SOURCE_URLS } from "./referenceMap";
 
-// Parse the "--- Section ---" blocks from buildReferenceText/selectRelevant output
-// and associate each block with canonical source names that map to URLs.
+// ---------- Config ----------
+const STOPWORDS = new Set([
+  "the","and","or","to","of","in","on","for","a","an","by","with","as","is","are","be","was","were",
+  "this","that","these","those","here","there","it","its","at","from","into","over","under","about",
+  "your","you","we","our","us","they","their"
+]);
+
+const DENYLIST_SINGLE_WORD = new Set([
+  "there","here","this","that","it","they","their","our","your","and","the","or"
+]);
+
+// Minimum score for a section to be considered the “best” for a sentence.
+// Score is a weighted overlap of meaningful tokens.
+const SECTION_SCORE_THRESHOLD = 2;
+
+// ---------- Helpers ----------
 function parseSections(staticRef) {
-  // Returns: [{ label, text, url }]
   const sections = [];
   if (!staticRef) return sections;
 
-  // Split on headers like: --- ATO.txt ---, --- DSS Demographics (...) ---, etc.
   const regex = /---\s*([^-]+?)\s*---\s*\n([\s\S]*?)(?=(?:\n---\s)|\s*$)/g;
   let match;
   while ((match = regex.exec(staticRef)) !== null) {
     const rawLabel = match[1].trim();
     const body = match[2] || "";
 
-    // Map label to a canonical key used in SOURCE_URLS
-    // We'll try a few straightforward normalizations:
     let key = rawLabel;
-
-    // Common variants we know from your builder:
-    // - "ATO.txt"
-    // - "SuperConsumersAustralia.txt"
-    // - "DSS Demographics ..."
-    // - "Leaving_The_Workforce.json"
-    // - "ABS_Retirement_Comparison.xlsx ..."
-    // - "Transition_Retirement_Plans.xlsx ..."
     if (/^ato\.txt/i.test(key)) key = "ATO.txt";
     else if (/^superconsumersaustralia\.txt/i.test(key)) key = "SuperConsumersAustralia.txt";
     else if (/^dss demographics/i.test(key)) key = "DSS Demographics";
@@ -42,77 +45,122 @@ function parseSections(staticRef) {
 
     const url = SOURCE_URLS[key];
     if (url) {
-      sections.push({ label: rawLabel, key, text: body, url });
+      sections.push({
+        label: rawLabel,
+        key,
+        url,
+        text: body,
+        textLower: body.toLowerCase(),
+      });
     }
   }
   return sections;
 }
 
-// Utility: escape regex special chars
 function escRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// Make a simple list of candidate n-grams (1–3 words) from source text.
+function splitSentencesWithIndex(text) {
+  // Simple splitter that keeps indices.
+  const out = [];
+  const re = /[^.!?]+[.!?]?/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const seg = m[0];
+    const start = m.index;
+    const end = start + seg.length;
+    // ignore pure whitespace
+    if (seg.trim().length) out.push({ text: seg, start, end });
+  }
+  return out;
+}
+
+function tokenize(str) {
+  return (str || "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s%$€£\-]/gu, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function hasDigitOrPercent(s) {
+  return /[\d%]/.test(s);
+}
+
+function isLinkableGram(gram) {
+  const words = gram.split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > 3) return false;
+
+  // Reject trivially short fragments unless they contain digits
+  if (gram.length < 3 && !hasDigitOrPercent(gram)) return false;
+
+  // Deny single-word fillers outright
+  if (words.length === 1 && DENYLIST_SINGLE_WORD.has(words[0].toLowerCase())) {
+    return false;
+  }
+
+  // At least one non-stopword OR it contains digits/percent
+  if (hasDigitOrPercent(gram)) return true;
+  return words.some(w => !STOPWORDS.has(w.toLowerCase()));
+}
+
 function extractCandidatePhrasesFromSource(sourceText) {
-  // Keep it pragmatic: extract tokens (words/numbers), slide windows of length 3→2→1
   const tokens = (sourceText || "")
     .replace(/[^\p{L}\p{N}\s%$€£\-]/gu, " ")
     .split(/\s+/)
     .filter(Boolean);
 
   const grams = new Set();
-
-  const maxGram = 3;
-  for (let n = maxGram; n >= 1; n--) {
+  for (let n = 3; n >= 1; n--) {
     for (let i = 0; i + n <= tokens.length; i++) {
       const gram = tokens.slice(i, i + n).join(" ").trim();
-      // Quick filters to avoid junk:
-      // - too short (1 char)
-      // - common stopword-only grams (crude)
-      if (gram.length < 2) continue;
+      if (!isLinkableGram(gram)) continue;
       grams.add(gram);
     }
   }
   return Array.from(grams);
 }
 
-// Find overlaps between response and a source block; return spans with URL.
-function findMatches(response, section) {
-  const matches = [];
-  if (!response || !section?.text || !section?.url) return matches;
+// Weighted overlap: numbers are most diagnostic; then capitalized/long tokens; else 1
+function scoreSectionForSentence(sentence, sectionLower) {
+  const sentTokens = tokenize(sentence);
+  let score = 0;
+  for (const t of sentTokens) {
+    if (STOPWORDS.has(t)) continue;
+    if (!t) continue;
 
-  const lowerResp = response.toLowerCase();
+    // require whole-word-ish presence in section (cheap check)
+    const pattern = new RegExp(`\\b${escRegex(t)}\\b`, "i");
+    if (!pattern.test(sectionLower)) continue;
+
+    if (/\d/.test(t)) score += 3;
+    else if (t.length >= 6) score += 2;
+    else score += 1;
+  }
+  return score;
+}
+
+function findMatchesInSentence(sentenceText, sentenceOffset, section) {
+  const matches = [];
   const candidates = extractCandidatePhrasesFromSource(section.text);
 
-  // Prefer longer n-grams first (3 words → 2 → 1)
+  // Prefer longer n-grams
   candidates.sort((a, b) => b.split(" ").length - a.split(" ").length);
 
-  const alreadyCovered = []; // store {start, end} indices in response to avoid overlaps
-
-  function isOverlapping(start, end) {
-    return alreadyCovered.some(r => !(end <= r.start || start >= r.end));
-  }
+  const alreadyCovered = [];
+  const isOverlapping = (s, e) => alreadyCovered.some(r => !(e <= r.start || s >= r.end));
 
   for (const gram of candidates) {
-    const words = gram.split(" ");
-    if (words.length > 3) continue; // hard cap
-    const pattern = new RegExp(`\\b${escRegex(gram)}\\b`, "i"); // word-boundary match
-    const m = pattern.exec(response);
+    const pattern = new RegExp(`\\b${escRegex(gram)}\\b`, "i");
+    const m = pattern.exec(sentenceText);
     if (!m) continue;
 
-    const start = m.index;
+    const start = sentenceOffset + m.index;
     const end = start + m[0].length;
-
     if (isOverlapping(start, end)) continue;
 
-    // Keep only sensible grams (avoid pure stopwords: crude list)
-    const stop = new Set(["the","and","or","to","of","in","on","for","a","an","by","with","as","is","are","be","was","were"]);
-    const nonStopCount = words.filter(w => !stop.has(w.toLowerCase())).length;
-    if (nonStopCount === 0) continue;
-
-    // Record
-    matches.push({ start, end, url: section.url, text: response.slice(start, end) });
+    matches.push({ start, end, url: section.url, text: m[0] });
     alreadyCovered.push({ start, end });
   }
 
@@ -121,7 +169,6 @@ function findMatches(response, section) {
   return matches;
 }
 
-// Build HTML with anchor tags; also escape unlinked regions safely.
 function escapeHtml(s) {
   return s
     .replace(/&/g, "&amp;")
@@ -135,33 +182,41 @@ export function highlightResponseWithSources(responseText, staticRefText) {
     return escapeHtml(responseText || "");
   }
 
-  // 1) Collect candidate matches per section (source)
-  let perSectionBest = [];
-  for (const section of sections) {
-    const matches = findMatches(responseText, section);
-    if (!matches.length) continue;
+  const sentences = splitSentencesWithIndex(responseText);
 
-    // Choose ONE best match for this source:
-    // prefer longer text, then earlier position
-    matches.sort((a, b) => {
-      if (b.text.length !== a.text.length) return b.text.length - a.text.length;
-      return a.start - b.start;
-    });
-    const best = matches[0];
-    perSectionBest.push({
-      ...best,
-      url: section.url, // ensure URL from section
-    });
+  // 1) For each sentence, pick ONE best section by score
+  const perSentenceMatches = [];
+  for (const seg of sentences) {
+    let best = null;
+    let bestScore = -Infinity;
+
+    for (const sec of sections) {
+      const sc = scoreSectionForSentence(seg.text, sec.textLower);
+      if (sc > bestScore) {
+        best = sec;
+        bestScore = sc;
+      }
+    }
+
+    // If best score is weak, skip linking for this sentence
+    if (!best || bestScore < SECTION_SCORE_THRESHOLD) continue;
+
+    // 2) Only look for matches from the best section for this sentence
+    const mm = findMatchesInSentence(seg.text, seg.start, best);
+    perSentenceMatches.push(...mm);
   }
 
-  // 2) Enforce "one link per source URL" across the whole message
+  if (!perSentenceMatches.length) {
+    return escapeHtml(responseText);
+  }
+
+  // 3) One link per source URL across the entire message (pick best: longer → earlier)
   const byUrl = new Map();
-  for (const m of perSectionBest) {
+  for (const m of perSentenceMatches) {
     const prev = byUrl.get(m.url);
     if (!prev) {
       byUrl.set(m.url, m);
     } else {
-      // Keep the better one (longer, then earlier)
       if (
         m.text.length > prev.text.length ||
         (m.text.length === prev.text.length && m.start < prev.start)
@@ -171,7 +226,7 @@ export function highlightResponseWithSources(responseText, staticRefText) {
     }
   }
 
-  // 3) Resolve overlaps globally (keep earlier/longer ones)
+  // 4) Resolve overlaps globally
   const uniqueMatches = Array.from(byUrl.values()).sort((a, b) => {
     if (a.start === b.start) return b.text.length - a.text.length;
     return a.start - b.start;
@@ -182,7 +237,6 @@ export function highlightResponseWithSources(responseText, staticRefText) {
   let lastEnd = -1;
 
   for (const m of uniqueMatches) {
-    // Skip if overlapping an already-accepted span
     if (m.start < lastEnd) continue;
 
     if (cursor < m.start) {
@@ -205,4 +259,3 @@ export function highlightResponseWithSources(responseText, staticRefText) {
 
   return final.join("");
 }
-
