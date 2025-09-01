@@ -3,6 +3,10 @@ import ReactDOM from "react-dom/client";
 import "./App.css";
 import { sendToGemini } from "./geminiChat1";
 
+// add d
+import { highlightResponseWithSources } from "./referenceHighlighter";
+
+
 
 
 function LandingPage() {
@@ -70,21 +74,61 @@ function LandingPage() {
     }, 30); // Adjust typing speed here (lower = faster)
   };
 
-  const handleSendMessage = async () => {
-    if (message.trim() && !isTyping) {
-      const userText = message.trim();
-      setMessages(prev => [...prev, { type: "user", text: userText }]);
-      setMessage("");
-      setIsTyping(true);
+  //old
+  // const handleSendMessage = async () => {
+  //   if (message.trim() && !isTyping) {
+  //     const userText = message.trim();
+  //     setMessages(prev => [...prev, { type: "user", text: userText }]);
+  //     setMessage("");
+  //     setIsTyping(true);
 
-      try {
-        const response = await sendToGemini(userText);
-        typeResponse(response, () => setIsTyping(false));
-      } catch {
-        typeResponse("Something went wrong.", () => setIsTyping(false));
-      }
+  //     try {
+  //       const response = await sendToGemini(userText);
+  //       typeResponse(response, () => setIsTyping(false));
+  //     } catch {
+  //       typeResponse("Something went wrong.", () => setIsTyping(false));
+  //     }
+  //   }
+  // };
+
+  //new
+  const handleSendMessage = async () => {
+  if (message.trim() && !isTyping) {
+    const userText = message.trim();
+    setMessages(prev => [...prev, { type: "user", text: userText }]);
+    setMessage("");
+    setIsTyping(true);
+
+    try {
+      const { text: botText, staticRef } = await sendToGemini(userText);
+
+      // 1) type out plain text (for the typing animation)
+      typeResponse(botText, () => {
+        // 2) when typing ends, post-process to HTML with references
+        const html = highlightResponseWithSources(botText, staticRef);
+
+        // replace the last bot message with an HTML-rendered one
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          // last is the bot message with isTyping false now
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...last,
+            text: botText,    // keep text for fallback
+            html,             // new field
+            isHtml: true,     // flag to render as HTML
+            isTyping: false,
+          };
+          return updated;
+        });
+
+        setIsTyping(false);
+      });
+    } catch {
+      typeResponse("Something went wrong.", () => setIsTyping(false));
     }
-  };
+  }
+};
 
 
 
@@ -169,8 +213,9 @@ function LandingPage() {
             </p>
             <p style={{ margin: 0 }}>How can I help you today?</p>
           </div>
-
-          {messages.map((msg, idx) => (
+          
+          {/* Old */}
+          {/* {messages.map((msg, idx) => (
             <div
               key={idx}
               className={
@@ -188,7 +233,39 @@ function LandingPage() {
                 </span>
               )}
             </div>
+          ))} */}
+
+
+          {/* New */}
+          {messages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={
+                msg.type === "user"
+                  ? "chatbox-user-bubble"
+                  : "chatbox-message-bubble"
+              }
+            >
+              {/* If html exists, render it safely; else render plain text */}
+              {msg.isHtml ? (
+                <p
+                  style={{ margin: 0 }}
+                  dangerouslySetInnerHTML={{ __html: msg.html }}
+                />
+              ) : (
+                <p style={{ margin: 0 }}>{msg.text}</p>
+              )}
+
+              {msg.isTyping && (
+                <span className="typing-indicator">
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                </span>
+              )}
+            </div>
           ))}
+
         </div> {/* End of chatbox-scroll-container */}
 
         <div className="chatbox-input-container">

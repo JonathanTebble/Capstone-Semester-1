@@ -51,9 +51,6 @@ async function ensureStaticLoaded() {
 export async function sendToGemini(userInput) {
   await ensureStaticLoaded();
 
-  // QUICK option: include a compact reference every time
-  // const staticRef = buildReferenceText(_staticData);
-
   // SMARTER option: include only relevant bits (simple keyword retrieval)
   const staticRef = selectRelevant(_staticData, userInput);
 
@@ -65,5 +62,14 @@ ${staticRef}
   `.trim();
 
   const result = await chat.sendMessage({ message });
-  return result.text;
+
+  // OLD:
+  // return result.text;
+
+  // NEW: return both text and the exact staticRef used,
+  // so the UI can precisely attribute and highlight.
+  return {
+    text: result.text,
+    staticRef,
+  };
 }

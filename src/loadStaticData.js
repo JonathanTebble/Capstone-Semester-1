@@ -18,8 +18,8 @@ import trpUrl from "./Data/Transition_Retirement_Plans.xlsx?url";
 
 
 
-const ROW_CAP = 50;           // keep things small for the model (might take too long to go through)
-const CHAR_CAP_TEXT = 20000;  // per long text source
+const ROW_CAP = 500;           // keep things small for the model (might take too long to go through)
+const CHAR_CAP_TEXT = 200000;  // per long text source
 
 export async function loadStaticData() {
   // CSV → array of objects
