@@ -3,8 +3,6 @@ import ReactDOM from "react-dom/client";
 import "./App.css";
 import { sendToGemini } from "./geminiChat";
 
-
-
 function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLarge, setIsLarge] = useState(false);
@@ -15,6 +13,7 @@ function LandingPage() {
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const chatScrollRef = useRef(null);
+  
 
   const toggleChat = () => setIsOpen(!isOpen);
 
@@ -30,7 +29,6 @@ function LandingPage() {
       if (i < response.length) {
         setMessages(prev => {
           const lastMsg = prev[prev.length - 1];
-          // If the last message is a bot message and it's still typing, update it
           if (lastMsg && lastMsg.type === "bot" && lastMsg.isTyping) {
             return [
               ...prev.slice(0, -1),
@@ -41,7 +39,6 @@ function LandingPage() {
               }
             ];
           }
-          // Otherwise, add a new bot message (for the first character or if previous was not typing bot)
           return [
             ...prev,
             {
@@ -56,36 +53,56 @@ function LandingPage() {
         clearInterval(typingInterval);
         setMessages(prev => {
           const lastMsg = prev[prev.length - 1];
-          // Set isTyping to false for the last bot message
           return [
             ...prev.slice(0, -1),
-            {
-              ...lastMsg,
-              isTyping: false
-            }
+            { ...lastMsg, isTyping: false }
           ];
         });
-        callback(); // Callback to set isTyping to false for the whole component
+        callback();
       }
-    }, 30); // Adjust typing speed here (lower = faster)
+    },30);
   };
 
-  const handleSendMessage = async () => {
-    if (message.trim() && !isTyping) {
-      const userText = message.trim();
-      setMessages(prev => [...prev, { type: "user", text: userText }]);
-      setMessage("");
-      setIsTyping(true);
+  // Inside handleSendMessage
+const handleSendMessage = async () => {
+  if (message.trim() && !isTyping) {
+    const userText = message.trim();
+    setMessages(prev => [...prev, { type: "user", text: userText }]);
+    setMessage("");
+    setIsTyping(true);
 
-      try {
-        const response = await sendToGemini(userText);
-        typeResponse(response, () => setIsTyping(false));
-      } catch {
-        typeResponse("Something went wrong.", () => setIsTyping(false));
-      }
+    // temporary "thinking" dot
+    setMessages(prev => [
+      ...prev,
+      { type: "bot", text: "", isThinking: true }
+    ]);
+
+    try {
+      // Pass name and location to Gemini
+      const response = await sendToGemini(userText, { name, location });
+
+      // transition thinking bubble into typing bubble
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.isThinking
+            ? { ...msg, isThinking: false, isTyping: true, text: "" }
+            : msg
+        )
+      );
+
+      typeResponse(response, () => setIsTyping(false));
+    } catch {
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.isThinking
+            ? { ...msg, isThinking: false, isTyping: true, text: "Something went wrong." }
+            : msg
+        )
+      );
+      setIsTyping(false);
     }
-  };
-
+  }
+};
 
 
   useEffect(() => {
@@ -100,7 +117,7 @@ function LandingPage() {
     setIsLarge(false);
   };
 
-  // Conditional rendering for chat page
+  // Chat page
   if (showChatPage) {
     return (
       <div className={`chatbox ${isLarge ? "chatbox-large" : ""}`}>
@@ -131,7 +148,7 @@ function LandingPage() {
                   fontWeight: "bold",
                   padding: "4px 8px"
                 }}
-                onClick={() => setIsLarge((prev) => !prev)}
+                onClick={() => setIsLarge(prev => !prev)}
               >
                 ⛶
               </button>
@@ -171,25 +188,26 @@ function LandingPage() {
           </div>
 
           {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={
-                msg.type === "user"
-                  ? "chatbox-user-bubble"
-                  : "chatbox-message-bubble"
-              }
-            >
-              <p style={{ margin: 0 }}>{msg.text}</p>
-              {msg.isTyping && (
-                <span className="typing-indicator">
+            <div key={idx}>
+              {msg.type === "user" ? (
+                <div className="chatbox-user-bubble">
+                  <p style={{ margin: 0 }}>{msg.text}</p>
+                </div>
+              ) : msg.isThinking ? (
+                <div className="typing-indicator">
                   <span className="typing-dot"></span>
                   <span className="typing-dot"></span>
                   <span className="typing-dot"></span>
-                </span>
+                </div>
+              ) : (
+                <div className="chatbox-message-bubble">
+                  <p style={{ margin: 0 }}>{msg.text}</p>
+                </div>
               )}
             </div>
           ))}
-        </div> {/* End of chatbox-scroll-container */}
+
+        </div>
 
         <div className="chatbox-input-container">
           <input
@@ -208,7 +226,7 @@ function LandingPage() {
     );
   }
 
-  // Conditional rendering for landing page
+  // Landing page
   return (
     <>
       {!isOpen && (
@@ -251,7 +269,7 @@ function LandingPage() {
                     fontWeight: "bold",
                     padding: "4px 8px"
                   }}
-                  onClick={() => setIsLarge((prev) => !prev)}
+                  onClick={() => setIsLarge(prev => !prev)}
                 >
                   ⛶
                 </button>
@@ -311,8 +329,7 @@ function LandingPage() {
               </p>
             </div>
           </div>
-          {/* This is where the missing closing div was likely located for the chatbox-scroll-container equivalent on the landing page */}
-        </div> // Closing div for the chatbox when isOpen is true
+        </div>
       )}
     </>
   );
