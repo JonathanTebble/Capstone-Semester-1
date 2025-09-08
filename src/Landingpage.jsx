@@ -248,13 +248,14 @@ function LandingPage() {
             >
               {/* If html exists, render it safely; else render plain text */}
               {msg.isHtml ? (
-                <p
-                  style={{ margin: 0 }}
+                <div
+                  className="terah-content"
                   dangerouslySetInnerHTML={{ __html: msg.html }}
                 />
               ) : (
                 <p style={{ margin: 0 }}>{msg.text}</p>
               )}
+
 
               {msg.isTyping && (
                 <span className="typing-indicator">

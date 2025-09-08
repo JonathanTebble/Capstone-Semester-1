@@ -188,3 +188,26 @@
   max-height: 80vh !important;
   min-height: 500px !important;
 }
+
+/* Structured content inside bot bubbles */
+.terah-content p {
+  margin: 0 0 12px;           /* paragraph spacing */
+  line-height: 1.5;
+}
+
+.terah-content ul {
+  margin: 0 0 12px 20px;      /* list spacing & indent */
+  padding: 0;
+  list-style: disc;           /* circle bullet (filled) */
+  list-style-position: outside;
+}
+
+.terah-content li {
+  margin: 4px 0;
+}
+
+/* Ensure links are readable on gradient bubbles */
+.chatbox-message-bubble a {
+  color: #fff;
+  text-decoration: underline;
+}
