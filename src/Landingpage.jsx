@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
-import { sendToGemini } from "./geminiChat";
+import { startConversation, sendMessage, endConversation } from "./geminiChat";
 
 function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,14 +12,24 @@ function LandingPage() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
   const chatScrollRef = useRef(null);
   
 
   const toggleChat = () => setIsOpen(!isOpen);
 
-  const handleStartChat = () => {
+  const handleStartChat = async () => {
     if (name.trim() && location.trim()) {
-      setShowChatPage(true);
+      // Start a new conversation when chat begins
+      try {
+        const convId = await startConversation();
+        setConversationId(convId);
+        setShowChatPage(true);
+      } catch (error) {
+        console.error("Error starting conversation:", error);
+        // Still show chat page even if conversation start fails
+        setShowChatPage(true);
+      }
     }
   };
 
@@ -78,8 +88,10 @@ const handleSendMessage = async () => {
     ]);
 
     try {
-      // Pass name and location to Gemini
-      const response = await sendToGemini(userText, { name, location });
+      // Use the conversation API to maintain memory
+      const response = conversationId 
+        ? await sendMessage(conversationId, userText)
+        : await sendToGemini(userText); // Fallback if no conversation ID
 
       // transition thinking bubble into typing bubble
       setMessages(prev =>
@@ -112,9 +124,15 @@ const handleSendMessage = async () => {
   }, [messages]);
 
   const handleClose = () => {
+    // End the conversation when closing chat
+    if (conversationId) {
+      endConversation(conversationId);
+      setConversationId(null);
+    }
     setIsOpen(false);
     setShowChatPage(false);
     setIsLarge(false);
+    setMessages([]); // Clear messages when closing
   };
 
   // Chat page

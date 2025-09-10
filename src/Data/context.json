@@ -1,0 +1,614 @@
+{
+  "data": {
+    "abs_retirement_stats": [
+      {
+        "title": "Retirement and Retirement Intentions, Australia 2022-23",
+        "keyStatistics": {
+          "totalRetirees": 4200000,
+          "averageRetirementAge": 56.9,
+          "retireesIn2022": 130000,
+          "averageRetirementAgeIn2022": 64.8,
+          "intendedRetirementAge": 65.4,
+          "mainIncomeSource": "Pension"
+        },
+        "retirementDemographics": {
+          "womenProportion": 0.54,
+          "menPopulationIncrease": "More than women",
+          "womenRetirementTrend": "Retiring later than previous years"
+        },
+        "retirementAgeTrends": {
+          "period": [
+            {
+              "year": "2020-21",
+              "retirees": 4100000,
+              "proportionRetired": 0.4,
+              "averageRetirementAge": 56.3
+            },
+            {
+              "year": "2022-23",
+              "retirees": 4200000,
+              "proportionRetired": 0.4,
+              "averageRetirementAge": 56.9
+            }
+          ],
+          "men": [
+            {
+              "year": "2020-21",
+              "retirees": 1800000,
+              "proportionRetired": 0.37,
+              "averageRetirementAge": 59.3
+            },
+            {
+              "year": "2022-23",
+              "retirees": 1900000,
+              "proportionRetired": 0.37,
+              "averageRetirementAge": 59.4
+            }
+          ],
+          "women": [
+            {
+              "year": "2020-21",
+              "retirees": 2300000,
+              "proportionRetired": 0.43,
+              "averageRetirementAge": 54.0
+            },
+            {
+              "year": "2022-23",
+              "retirees": 2300000,
+              "proportionRetired": 0.42,
+              "averageRetirementAge": 54.7
+            }
+          ]
+        },
+        "retirementAgeByGender2022": {
+          "men": 66.9,
+          "women": 63.2
+        },
+        "retirementIntentions": {
+          "intendedRetirementAge": 65.4,
+          "intendToRetireNext5Years": 710000,
+          "intendToRetireNext2Years": 226000,
+          "dontKnowWhenToRetire": {
+            "proportion": 0.38,
+            "number": 1700000
+          }
+        },
+        "retirementIntentionsByGender": {
+          "men": {
+            "intendToRetireIn2Years": 133000,
+            "intendToRetireIn5Years": 371000,
+            "averageIntendedRetirementAge": 65.7
+          },
+          "women": {
+            "intendToRetireIn2Years": 94000,
+            "intendToRetireIn5Years": 339000,
+            "averageIntendedRetirementAge": 65.1
+          }
+        },
+        "highestIntendedRetirementAgeIndustry": "Agriculture, forestry and fishing (68.3 years)",
+        "reasonsForLeavingLastJob": {
+          "topReasons": [
+            {
+              "reason": "Reached retirement age or eligible for superannuation",
+              "percentage": 0.31
+            },
+            {
+              "reason": "Own sickness, injury or disability",
+              "percentage": 0.13
+            },
+            {
+              "reason": "Retrenched, dismissed or no work available",
+              "percentage": 0.05
+            }
+          ],
+          "womenMoreLikelyToLeaveForCare": true,
+          "womenPercentage": 0.04,
+          "menPercentage": 0.03
+        },
+        "incomeAtRetirement": {
+          "mainSource": "Government pension",
+          "superannuationIncrease": "Greater for women than men",
+          "noPersonalIncome": {
+            "women": 0.18,
+            "men": 0.04
+          },
+          "womenRelyingOnPartnerIncome": 0.31,
+          "menRelyingOnPartnerIncome": 0.08,
+          "mainInfluencingFactorForIntendedRetirement": "Financial security"
+        },
+        "incomeSourcesProportions": {
+          "men": {
+            "governmentPensionAllSources": {
+              "2020_21": 0.53,
+              "2022_23": 0.54
+            },
+            "superannuationAllSources": {
+              "2020_21": 0.51,
+              "2022_23": 0.48
+            },
+            "governmentPensionMainSource": {
+              "2020_21": 0.44,
+              "2022_23": 0.47
+            },
+            "superannuationMainSource": {
+              "2020_21": 0.35,
+              "2022_23": 0.33
+            },
+            "noPersonalIncome": {
+              "2020_21": 0.03,
+              "2022_23": 0.04
+            }
+          },
+          "women": {
+            "governmentPensionAllSources": {
+              "2020_21": 0.46,
+              "2022_23": 0.45
+            },
+            "superannuationAllSources": {
+              "2020_21": 0.29,
+              "2022_23": 0.33
+            },
+            "governmentPensionMainSource": {
+              "2020_21": 0.42,
+              "2022_23": 0.41
+            },
+            "superannuationMainSource": {
+              "2020_21": 0.19,
+              "2022_23": 0.21
+            },
+            "noPersonalIncome": {
+              "2020_21": 0.19,
+              "2022_23": 0.18
+            }
+          }
+        },
+        "superannuationLumpSumPayments": {
+          "2020_21": 870000,
+          "2022_23": 880000,
+          "covidImpact": "Early release of superannuation during COVID-19 pandemic"
+        },
+        "stateAndTerritoryData": {
+          "highestProportionOfRetirees": "South Australia (46%)",
+          "greatestIncreaseInRetirees": "Queensland (+32,000)",
+          "highestIncreaseInProportionOfRetirees": "South Australia (45% to 46%)",
+          "largestDecreaseInProportionOfRetirees": "Tasmania (49% to 46%)"
+        },
+        "dataAvailability": {
+          "datalab": true,
+          "dataDownloads": true,
+          "tableDownloads": true
+        },
+        "previousCatalogueNumber": "6238.0",
+        "priorPublications": [
+          "Employment Arrangements, Retirement and Superannuation (6361.0), 2007",
+          "State Tables (6361.0.55.003)",
+          "Datacubes (6361.0.55.004)",
+          "Employment Arrangements and Superannuation (6361.0), 2000",
+          "Superannuation: Coverage and Financial Characteristics (6360.0), 2000",
+          "Superannuation (6319.0), 1974 to 1995",
+          "Persons Who Have Left The Labour Force (6267.0), 1985 to 1994",
+          "Persons Who Intended To Retire From Full-Time Work (6258.0), 1984"
+        ],
+        "methodology": "Retirement and Retirement Intentions, Australia methodology, 2022-23 financial year"
+      }
+    ],
+    "superconsumers_death_benefit": [
+      {
+        "raw_output": "{\n  \"reportTitle\": \"Superannuation death benefit delays – you don’t get paid faster if you pay higher fees!\",\n  \"reportDate\": \"April 4, 2025\",\n  \"source\": \"superconsumers.com.au\",\n  \"keyFinding\": \"There is no relationship between superannuation fees and the speed of death benefit payments.  Higher fees do not guarantee faster service.\",\n  \"dataSources\": [\n    {\n      \"source\": \"ASIC\",\n      \"description\": \"Report on lengthy delays in superannuation death benefit claims.\",\n      \"date\": \"Unspecified\"\n    },\n    {\n      \"source\": \"APRA\",\n      \"description\": \"Data on fees charged to superannuation members in default products (MySuper).\",\n      \"date\": \"September 2024\"\n    },\n    {\n      \"source\": \"Fund Websites\",\n      \"description\": \"Fees information for pension products.\",\n      \"date\": \"March 4, 2025\"\n    }\n  ],\n  \"mySuperAnalysis\": {\n    \"fastestTrustees\": [\n      {\n        \"trustee\": \"Avanteos\",\n        \"adminFees_50k\": 70,\n        \"products\": [\"FirstChoice Employer Super MySuper\", \"Essential Super MySuper\"]\n      },\n      {\n        \"trustee\": \"Unisuper\",\n        \"adminFees_50k\": 80,\n        \"products\": [\"MySuper\"]\n      }\n    ],\n    \"slowestTrustees\": [\n      {\n        \"trustee\": \"Commonwealth Superannuation Corporation\",\n        \"adminFees_50k\": [70, 75],\n        \"products\": [\"Public Sector Super Accumulation Plan MySuper\", \"Australian Defence Force MySuper\"]\n      },\n      {\n        \"trustee\": \"REST\",\n        \"adminFees_50k\": 130,\n        \"products\": [\"MySuper\"]\n      }\n    ],\n    \"highestFees\": {\n      \"trustee\": \"Nulis\",\n      \"adminFees_50k\": 200,\n      \"product\": \"MLC MySuper\"\n    }\n  },\n  \"pensionAnalysis\": {\n    \"fastestTrustees\": [\n      {\n        \"trustee\": \"Avanteos\",\n        \"adminFees_50k\": 100,\n        \"product\": \"FirstChoice Wholesale Retirement Pension\"\n      },\n      {\n        \"trustee\": \"Unisuper\",\n        \"adminFees_50k\": 176,\n        \"product\": \"Unisuper Flexi Pension\"\n      }\n    ],\n    \"slowestTrustees\": [\n      {\n        \"trustee\": \"Commonwealth Superannuation Corporation\",\n        \"adminFees_50k\": 73,\n        \"product\": \"CSC Retirement Income\"\n      },\n      {\n        \"trustee\": \"REST\",\n        \"adminFees_50k\": 128,\n        \"product\": \"Rest Pension\"\n      }\n    ],\n    \"highestFees\": {\n      \"trustee\": \"Hostplus\",\n      \"adminFees_50k\": 234,\n      \"product\": \"Hostplus Pension\"\n    }\n  },\n  \"tables\": [\n    {\n      \"title\": \"MySuper product administration and total fees\",\n      \"columns\": [\"Super fund trustee\", \"Percentage of death benefits paid by 90 days\", \"Administration fees and costs charged ($50,000 account balance)\", \"Administration fees and costs charged ($100,000 account balance)\", \"Total fees and costs charged ($50,000 account balance)\", \"Total fees and costs charged ($100,000 account balance)\", \"MySuper product\"],\n      \"data\": [] // Table data omitted for brevity.  Available in original text.\n    },\n    {\n      \"title\": \"Account-based pension product administration and total fees\",\n      \"columns\": [\"Super fund trustee\", \"Percentage of death benefits paid by 90 days\", \"Administration fees and costs charged ($50,000 account balance)\", \"Administration fees and costs charged ($100,000 account balance)\", \"Total fees and costs charged ($50,000 account balance)\", \"Total fees and costs charged ($100,000 account balance)\", \"Pension product\"],\n      \"data\": [] //Table data omitted for brevity. Available in original text.\n    }\n  ],\n  \"conclusion\": \"Paying higher administration fees does not mean you receive better service in superannuation. Mandatory customer service standards, including timeframes for processing death benefit payments, are urgently needed.\"\n}"
+      }
+    ],
+    "superconsumers_pulse_spotlight": [
+      {
+        "title": "1 in 4 Australians are in the dark about the insurance in their super: Pulse Spotlight",
+        "date": "27 Mar 2025",
+        "source": "Super Consumers Australia",
+        "survey": "Pulse survey",
+        "key_findings": [
+          {
+            "finding": "27% of Australians are unsure if they have super insurance or don't know what their policies are.",
+            "breakdown": {
+              "unsure": "19%",
+              "don't know policies": "9%"
+            }
+          },
+          {
+            "finding": "Over half of 25-29 year olds don't know default insurance starts at age 25."
+          },
+          {
+            "finding": "Australians paid $6.785 billion for group super insurance in 2023-24."
+          },
+          {
+            "finding": "Choice of fund impacts knowledge: 79% in chosen funds knew vs 71% in default funds."
+          },
+          {
+            "finding": "45% of 18-24 year olds don't know if they have insurance or what it is (typically no default insurance in this age group)."
+          },
+          {
+            "finding": "Higher knowledge among older people: 84% (55-64) and 88% (65+) know their insurance status."
+          },
+          {
+            "finding": "Gender disparity: 31% of women vs 24% of men don't know their insurance."
+          },
+          {
+            "finding": "Knowledge doesn't significantly change between ages 25 and 54 (28% of 25-34 year olds vs 24% of 45-54 year olds don't know)."
+          },
+          {
+            "finding": "Half of those who just reached default insurance age don't know about it."
+          },
+          {
+            "finding": "74% of 18-24 year olds didn't know or got wrong the fact that super funds automatically enroll in default insurance after 25."
+          },
+          {
+            "finding": "Default insurance costs members several hundred dollars annually, potentially more for risky occupations (example: $798 p.a. for a 40-year-old in a dangerous occupation with Cbus)."
+          },
+          {
+            "finding": "2018 Productivity Commission found group insurance caused 'excessive' super balance erosion (example: $85,000-$125,000 less retirement income for a low-income blue-collar worker)."
+          }
+        ],
+        "recommendations": [
+          "Productivity Commission review of insurance in super",
+          "Examine if insurance in super is the most appropriate method",
+          "Analyze net public benefits and costs",
+          "Analyze gaps and overlaps with other support schemes",
+          "Consider alternative models (e.g., no-fault compensation)",
+          "If retained, improve value of insurance in super with standardized terms and consumer protection."
+        ],
+        "survey_details": {
+          "sample_size": "1526",
+          "age_range": "18-75",
+          "survey_period": "14 May 2024 - 24 May 2024",
+          "representativeness": "Representative of Australian population based on age, gender, and location",
+          "funding": "Ecstra Foundation"
+        }
+      }
+    ],
+    "superconsumers_retirement_targets_methodology": [
+      {
+        "title": "Update to Super Consumers Australia Retirement Savings Targets Methodology",
+        "date": "23 Jan 2025",
+        "report_series": "Research 2025",
+        "purpose": "To determine how much superannuation is needed for retirement, providing targets for individuals around ages 55 and 65, considering spending at the 30th, 50th, and 70th percentiles.",
+        "methodology_changes": [
+          {
+            "section": "Spending Targets",
+            "description": "Removed multigenerational households from the sample to improve accuracy of expenditure estimations for single and couple households. This addresses the lower shared expenditure among multigenerational households affecting the high-expenditure group.",
+            "reason": "The targets are designed for single and couple households only."
+          },
+          {
+            "section": "Bootstrap Methodology",
+            "changes": [
+              "Sampling real returns instead of nominal returns.",
+              "Sampling monthly returns instead of annual returns (eliminating overlapping periods).",
+              "Incorporating historical Australian Bank Bill and Australian Bond returns in the calibrated long-run constructed portfolio real return mean.",
+              "Calibration to a historical arithmetic average instead of a geometric average."
+            ],
+            "portfolio": "60/40 growth/defensive investment portfolio held from age 65 to 90 (26 years).  Consists of 26.4% Australian Equities, 26.4% World Equities, 7.2% Australian Listed Property, 16% Australian Fixed Interest, 16% World Fixed Interest, 8% Cash.",
+            "simulation": "Generates 10,000 paths of 26 years of annual returns by randomly drawing observations from an empirical distribution of historical returns."
+          },
+          {
+            "section": "Age Pension Assumptions",
+            "changes": [
+              {
+                "aspect": "Productivity Assumption",
+                "description": "Lowered the productivity assumption from 1.5% to 1.2% to align with the 2023 Intergenerational Report. This impacts real wage growth and subsequently, Age Pension growth.",
+                "reference": "https://treasury.gov.au/publication/2023-intergenerational-report"
+              },
+              {
+                "aspect": "Age Pension Benchmark",
+                "description": "Adjusted to account for legislated indexing of the Age Pension, including cost of living increases (LCI/CPI) and a benchmark to male total average weekly earnings (MTAWE).",
+                "note": "Currently, MTAWE benchmark is below the Age Pension; it will take approximately 10 years to surpass the real Age Pension using LCI/CPI indexing."
+              }
+            ]
+          }
+        ],
+        "acknowledgments": "Research Advisory Council and the University of Melbourne Department of Finance provided feedback.",
+        "model_development": "The model was developed with the assistance of Geoff Warren and Gaurav Khemka from ANU.",
+        "related_documents": [
+          "https://superconsumers.com.au/wp-content/uploads/2024/08/SCA-submission-ASIC-Productivity-Assumption-Consultation.pdf",
+          "https://superconsumers.com.au/wp-content/uploads/2024/08/SCA-submission-ASIC-Productivity-Assumption-Consultation.pdf"
+        ]
+      }
+    ],
+    "moneysmart_asfa_retirement_standard": [
+      {
+        "source": "ASFA Retirement Standard, March quarter 2025",
+        "standards": [
+          {
+            "lifestyle": "Modest",
+            "couple": {
+              "annual_cost": 48184,
+              "weekly_cost": 923,
+              "lump_sum": 100000
+            },
+            "single": {
+              "annual_cost": 33386,
+              "weekly_cost": 640,
+              "lump_sum": 100000
+            },
+            "description": "Covers the basics; mostly met by the Age Pension."
+          },
+          {
+            "lifestyle": "Comfortable",
+            "couple": {
+              "annual_cost": 73875,
+              "weekly_cost": 1415,
+              "lump_sum": 690000
+            },
+            "single": {
+              "annual_cost": 52383,
+              "weekly_cost": 1003,
+              "lump_sum": 595000
+            },
+            "description": "Includes leisure activities, good standard of living (private health insurance, car, household goods, holidays). Assumes partial Age Pension."
+          }
+        ],
+        "assumptions": {
+          "retirement_age": 65,
+          "life_expectancy": 85,
+          "home_ownership": true
+        },
+        "note": "ASFA produces a separate retirement standard for older retirees."
+      }
+    ],
+    "moneysmart_tax_and_super": [
+      {
+        "superannuationTaxation": {
+          "contributionTax": {
+            "employerContributions": {
+              "taxRate": 0.15,
+              "exceptions": [
+                {
+                  "condition": "Income <= $37,000",
+                  "description": "Low-income super tax offset (LISTO)",
+                  "taxImpact": "Tax refunded to super account"
+                },
+                {
+                  "condition": "Combined income and super contributions > $250,000",
+                  "description": "Division 293 tax",
+                  "taxImpact": "Additional 15% tax"
+                }
+              ],
+              "nonConcessionalContributions": {
+                "taxRate": 0,
+                "description": "Contributions from after-tax income"
+              }
+            },
+            "taxFileNumber": {
+              "importance": "Essential for avoiding extra tax"
+            },
+            "atoWebsite": "See the ATO website for more information"
+          },
+          "investmentEarningsTax": {
+            "taxRate": 0.15,
+            "description": "Applies to interest and dividends, less deductions and credits"
+          },
+          "withdrawalTax": {
+            "incomeStream": {
+              "age60Plus": {
+                "taxRate": 0
+              },
+              "under60": {
+                "taxRate": "May be taxable"
+              },
+              "atoWebsite": "See retirement income and tax"
+            },
+            "lumpSum": {
+              "age60Plus": {
+                "taxedFund": {
+                  "taxRate": 0
+                },
+                "untaxedFund": {
+                  "taxRate": "May be taxable"
+                }
+              },
+              "under60": {
+                "lowRateCap": {
+                  "amount": 260000,
+                  "taxRate": 0
+                },
+                "aboveLowRateCap": {
+                  "taxRate": "17% (including Medicare levy) or marginal rate, whichever is lower"
+                },
+                "preservationAgeNotReached": {
+                  "taxRate": "22% (including Medicare levy) or marginal rate, whichever is lower"
+                },
+                "atoWebsite": "See the super lump sum tax table on the ATO website"
+              }
+            }
+          },
+          "deathBenefitTax": {
+            "taxFactors": [
+              "Tax-free and taxable components of the super",
+              "Dependency status for tax purposes",
+              "Whether benefit is taken as income stream or lump sum"
+            ],
+            "atoWebsite": "See super death benefits on the ATO website for more information"
+          },
+          "generalAdvice": {
+            "statement": "Because everyone's situation is different, it's always best to get advice about tax matters. Contact the Australian Taxation Office (ATO) or a financial adviser."
+          }
+        }
+      }
+    ],
+    "ato_planning_to_retire_before_you_retire": [
+      {
+        "retirementPlanning": {
+          "preRetirementConsiderations": [
+            {
+              "item": "Age",
+              "details": "Check if you've reached your preservation age."
+            },
+            {
+              "item": "Superannuation",
+              "details": "Review your superannuation balance and potential income streams."
+            },
+            {
+              "item": "Tax",
+              "details": "Calculate the tax implications on your retirement income."
+            },
+            {
+              "item": "Employee Share Schemes (ESS)",
+              "details": "Determine if 'good leaver' conditions apply."
+            },
+            {
+              "item": "Small Business CGT Concession",
+              "details": "Assess eligibility for the capital gains tax retirement concession."
+            },
+            {
+              "item": "Termination Payments",
+              "details": "Understand the tax implications of employment termination payments, genuine redundancy payments, and payments from approved early retirement schemes."
+            },
+            {
+              "item": "Job Changes",
+              "details": "Note that tax implications may vary based on reasons for leaving employment (termination, industry change, leaving Australia)."
+            }
+          ],
+          "paymentsLeadingToRetirement": [
+            {
+              "item": "Lump Sum Payments (Annual/Long Service Leave)",
+              "details": "Tax may be lower than other income; reported as 'Lump sum A' or 'Lump sum B' on income statement."
+            },
+            {
+              "item": "Genuine Redundancy Payments",
+              "details": "Tax-free up to a limit based on years of service."
+            },
+            {
+              "item": "Early Retirement Schemes",
+              "details": "May result in lower tax on payments received."
+            }
+          ],
+          "postRetirementConsiderations": [
+            {
+              "item": "Tax Offsets",
+              "details": "Access to seniors and pensioners tax offset, superannuation income stream tax offset."
+            },
+            {
+              "item": "Superannuation Income Stream Tax Offset",
+              "details": "Eligibility based on disability benefit, death benefit income stream, or age 60 or over."
+            }
+          ],
+          "employeeShareSchemes": {
+            "goodLeaverConditions": "These conditions may allow retention of ESS interests upon retirement.  Risk of forfeiture depends on ESS operation and employee circumstances."
+          },
+          "cgtRetirementExemption": {
+            "details": "Capital gains tax retirement concession may exempt up to $500,000 of capital gain on business assets.  No business termination required.  Under 55?  Requires equal personal contribution to superannuation or retirement savings account.",
+            "limit": 500000
+          }
+        }
+      }
+    ],
+    "ato_transition_to_retirement_rules": [
+      {
+        "transitionToRetirementRules": {
+          "description": "Allows individuals to reduce working hours without reducing income by starting a Transition to Retirement Income Stream (TRIS) upon reaching preservation age.",
+          "mechanism": "TRIS payments supplement part-time income with regular payments from super savings.",
+          "accessBeforeChanges": "Super access was previously limited to age 65 or retirement.",
+          "changesFrom2017": "Refer to GN 2019/1 for details on changes effective July 1, 2017.",
+          "accessType": "Non-commutable income stream (cannot be converted to a lump sum).",
+          "lumpSumPayment": "Lump sum cash payments are generally not allowed while working.",
+          "superGuaranteeContributions": "Employers must still make compulsory super guarantee contributions for eligible employees, including those on a TRIS.",
+          "financialAdviceRecommendation": "Seek financial advice on super withdrawal options and tax implications.",
+          "TRIS_NotRetirementPhase": {
+            "earningsTaxation": "Earnings are taxed at the relevant tax rate and are not eligible for exempt current pension income (ECPI).",
+            "transferBalanceCap": "Does not count towards the transfer balance cap until it enters the retirement phase."
+          },
+          "retirementPhaseConditions": [
+            "Age 65 or older",
+            "Retirement",
+            "Permanent incapacity",
+            "Terminal medical condition"
+          ]
+        }
+      }
+    ],
+    "ato_accessing_super_when_you_can_access": [
+      {
+        "superAccess": {
+          "general": {
+            "retirementAccess": "Access super upon reaching preservation age and retirement.",
+            "earlyAccess": [
+              "Turning 65 years old",
+              "Transition to retirement rules (if eligible) while working"
+            ],
+            "mandatoryWithdrawal": "Not mandatory to cash out upon reaching a certain age. Check super fund rules."
+          },
+          "preservationAge": {
+            "definition": "Age to access super; differs from pension age.",
+            "determination": "Depends on birthdate."
+          },
+          "taxImplications": {
+            "taxFree": "Super payments may be tax-free at 60 or older.",
+            "taxReturn": {
+              "noReturn": "No tax return needed if 60+ and super benefits are only income from a taxed source.",
+              "requiredReturn": "Tax return required if other income sources exist or PAYG tax withheld from superannuation income stream (including investments or some public sector funds)."
+            },
+            "taxOnBenefits": {
+              "factors": [
+                "Age",
+                "Payment amount",
+                "Income stream or lump sum",
+                "Taxed or untaxed source"
+              ],
+              "components": {
+                "taxFree": [
+                  "Contributions without tax deduction",
+                  "Certain other tax-free rolled-over amounts"
+                ],
+                "taxable": "Portion subject to tax"
+              }
+            }
+          },
+          "benefitTypes": [
+            "Super income stream",
+            "Super lump sum",
+            "Combination of both"
+          ],
+          "recommendations": {
+            "financialAdvice": "Seek financial advice for super withdrawal options, tax implications on retirement, transition to retirement, and superannuation income streams."
+          }
+        }
+      }
+    ],
+    "ato_approved_early_retirement_schemes": [
+      {
+        "earlyRetirementScheme": {
+          "definition": "A payment made by an employer to encourage early retirement or resignation, with a tax-free component up to a certain limit.",
+          "approval": {
+            "required": true,
+            "authority": "Commissioner of Taxation",
+            "timing": "Before payments start"
+          },
+          "taxation": {
+            "taxFreeLimit": {
+              "basis": "Number of years of service with the employer",
+              "calculation": "Whole dollar amount + amount per year of service",
+              "indexation": "Annually on July 1st"
+            },
+            "excessPayment": "Treated as an Employment Termination Payment (ETP)",
+            "separateFromETP": true,
+            "ageLimitChange": {
+              "date": "July 1, 2019",
+              "before": "Only applied to individuals under 65",
+              "after": "Extends to individuals 65 and older who retire before pension age"
+            }
+          },
+          "warnings": {
+            "illegalSchemes": "Beware of illegal super schemes promising early access to superannuation.  Heavy penalties apply."
+          }
+        }
+      }
+    ]
+  },
+  "scraped_sources": {
+    "abs_retirement_stats": true,
+    "superconsumers_death_benefit": true,
+    "superconsumers_pulse_spotlight": true,
+    "superconsumers_retirement_targets_methodology": true,
+    "moneysmart_asfa_retirement_standard": true,
+    "moneysmart_tax_and_super": true,
+    "ato_planning_to_retire_before_you_retire": true,
+    "ato_transition_to_retirement_rules": true,
+    "ato_accessing_super_when_you_can_access": true,
+    "ato_approved_early_retirement_schemes": true
+  }
+}

@@ -14,7 +14,7 @@ import undetected_chromedriver as uc
 import random
 
 GEMINI_API_KEY = os.getenv("VITE_GEMINI_API_KEY")  
-CONTEXT_JSON_PATH = os.path.join(os.path.dirname(__file__), "context.json")
+CONTEXT_JSON_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "Data", "context.json")
 
 SOURCES = [
     {
@@ -87,6 +87,8 @@ def load_context():
     return {}
 
 def save_context(context):
+    # Ensure the Data directory exists
+    os.makedirs(os.path.dirname(CONTEXT_JSON_PATH), exist_ok=True)
     with open(CONTEXT_JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(context, f, indent=2, ensure_ascii=False)
 
@@ -114,7 +116,10 @@ class WebScraper:
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        self.driver = uc.Chrome(options=chrome_options)
+        
+        # Use regular ChromeDriver with webdriver-manager for automatic version matching
+        service = Service(ChromeDriverManager().install())
+        self.driver = webdriver.Chrome(service=service, options=chrome_options)
 
     def random_delay(self, min_sec=2, max_sec=5):
         delay = random.uniform(min_sec, max_sec)
@@ -188,15 +193,28 @@ class WebScraper:
 
 def send_to_gemini(text):
     print("Sending extracted text to Gemini for JSON conversion...")
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    prompt = (
-        "Please take all the important information in this text and output it as a json file with relevant fields and headers.\n\n"
-        f"Text:\n{text}"
-    )
-    response = model.generate_content(prompt)
-    print("Received response from Gemini.")
-    return response.text
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        
+        # Limit text size to avoid API issues
+        max_chars = 30000
+        if len(text) > max_chars:
+            print(f"Text too long ({len(text)} chars), truncating to {max_chars} chars...")
+            text = text[:max_chars] + "\n...[truncated due to length]"
+        
+        prompt = (
+            "Please take all the important information in this text and output it as a json file with relevant fields and headers.\n\n"
+            f"Text:\n{text}"
+        )
+        
+        print("Making request to Gemini API...")
+        response = model.generate_content(prompt)
+        print("Received response from Gemini.")
+        return response.text
+    except Exception as e:
+        print(f"Error calling Gemini API: {e}")
+        return f'{{"error": "Failed to process with Gemini", "raw_text": "{text[:1000]}..."}}'
 
 def clean_markdown_code_block(text):
     # Remove Markdown code block markers if present
