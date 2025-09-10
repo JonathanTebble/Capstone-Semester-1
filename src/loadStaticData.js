@@ -130,6 +130,18 @@ export function buildMediumReferenceText(data) {
   return result;
 }
 
+// Get enhanced context for specific messages (used in hybrid approach)
+export function getMessageSpecificContext(data, query, options = {}) {
+  // Use selectRelevant with more focused parameters for message-specific enhancement
+  return selectRelevant(data, query, {
+    ROW_CAP: 25,
+    MIN_MATCH_SCORE: 0.3,
+    MAX_SNIPPETS_PER_TEXT: 3,
+    CONTENT_AGGRESSIVENESS: 2.0,
+    ...options
+  });
+}
+
 // Enhanced query parsing and text processing functions
 function parseQuery(query) {
   const q = String(query || "").toLowerCase();

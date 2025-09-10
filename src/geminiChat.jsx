@@ -1,6 +1,6 @@
 // src/geminiChat1.jsx
 import { GoogleGenAI } from "@google/genai";
-import { loadStaticData, buildReferenceText, selectRelevant } from "./loadStaticData";
+import { loadStaticData, buildMediumReferenceText, getMessageSpecificContext } from "./loadStaticData";
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
@@ -59,29 +59,221 @@ function generateConversationId() {
   return `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// Build comprehensive system instruction with all context
-async function buildComprehensiveSystemInstruction(userInput) {
+// Build system instruction with medium baseline context
+async function buildSystemInstructionWithMediumContext() {
   await ensureStaticLoaded();
   
-  // Get relevant static data based on user input
-  const staticRef = selectRelevant(_staticData, userInput, {
-    ROW_CAP: 15,           // Slightly higher for system instruction
-    MIN_MATCH_SCORE: 0.7,  // Slightly lower threshold for comprehensive context
-    MAX_SNIPPETS_PER_TEXT: 5  // More snippets for better coverage
-  });
+  // Use medium reference for consistent baseline knowledge across all conversations
+  const mediumRef = buildMediumReferenceText(_staticData);
 
   return baseSystemInstruction
-    .replace('{STATIC_CONTEXT}', staticRef);
+    .replace('{STATIC_CONTEXT}', mediumRef);
+}
+
+
+
+// Enhanced pattern-based detection for message enhancement
+const ENHANCEMENT_PATTERNS = {
+  // Quantitative queries - numbers, amounts, rates
+  quantitative: /\b(how much|what rate|how many|what amount|what percentage|how expensive|cost|price|fee|charge|\$|dollar|cents|thousand|million|percent|%|rate of|amount of|value of|worth|threshold|limit|cap|minimum|maximum|range|between|from .+ to|up to|at least|no more than|over|under|above|below)\b/i,
+  
+  // Temporal queries - time, age, dates, when
+  temporal: /\b(when can|what age|how old|by age|at age|after age|before age|age \d+|from age|until age|preservation age|pension age|retirement age|early retirement|when do|when will|when should|how long|duration|years|months|timeline|deadline|expiry|expire|start|begin|end|finish|eligibility age|access age)\b/i,
+  
+  // Procedural queries - how to, steps, processes
+  procedural: /\b(how to|how do|steps|step by step|process|procedure|application|apply|form|document|paperwork|requirements|qualify|eligible|criteria|conditions|rules|regulations|law|legal|compliance|submit|lodge|file|claim|request)\b/i,
+  
+  // Comparative queries - differences, comparisons, options
+  comparative: /\b(compare|comparison|difference|different|versus|vs|better|worse|best|worst|pros|cons|advantages|disadvantages|which|what's the|alternative|option|choose|choice|decide|between|rather than|instead of|prefer)\b/i,
+  
+  // Complex financial topics
+  financial: /\b(superannuation|super fund|smsf|industry fund|retail fund|contribution|concessional|non-concessional|salary sacrifice|employer contribution|personal contribution|government co-contribution|spouse contribution|catch-up|carry forward|rollover|consolidate|transfer|investment option|asset allocation|diversification|risk|return|performance|fees|administration|insurance|death benefit|disability|income protection|binding nomination|reversionary|pension|account based|transition to retirement|ttr|allocated pension|annuity|centrelink|age pension|assets test|income test|deeming|taper rate|work bonus|gifting|tax|franking credits|capital gains|assessable income|taxable income|marginal tax rate|medicare levy|surcharge|rebate|offset|deduction)\b/i,
+  
+  // Retirement lifecycle and access
+  lifecycle: /\b(retirement|retire|retiring|retired|early retirement|phased retirement|gradual retirement|workforce|employment|unemployed|job|career|work|working|part-time|full-time|casual|contractor|self-employed|business owner|director|trustee|beneficiary|member|account holder|preservation|access|withdraw|withdrawal|lump sum|pension payments|income stream|commutation|hardship|compassionate|terminal illness|permanent incapacity|temporary incapacity|unemployment|mortgage|medical|financial hardship|severe financial hardship|first home|education|migration)\b/i,
+  
+  // Technical and administrative
+  technical: /\b(rollover|consolidation|transfer|portability|splitting|contribution splitting|downsizer|home downsizer|bring forward|cap|limit|excess|penalty|surcharge|compliance|regulation|legislation|ato|apra|asic|accc|fair work|ombudsman|complaint|dispute|review|appeal|audit|investigation|breach|non-compliance|reporting|statement|balance|transaction|investment|switch|redemption|unit price|market value|administration fee|investment fee|indirect cost ratio|performance fee|buy-sell spread|exit fee|switching fee|advice fee|ongoing fee|commission|conflicted remuneration)\b/i,
+  
+  // Detail and clarification requests
+  detail: /\b(more detail|specific|exactly|precisely|explain|clarify|elaborate|tell me more|what does this mean|what is|define|definition|meaning|example|instance|scenario|case study|illustration|breakdown|summary|overview|comprehensive|detailed|thorough|complete|full|entire|all|everything|anything|nothing|nobody|everybody|someone|anyone|how exactly|why exactly|what exactly|when exactly|where exactly|who exactly)\b/i,
+  
+  // Urgency and importance indicators
+  urgency: /\b(urgent|emergency|asap|immediately|right away|quickly|fast|soon|deadline|due date|time sensitive|important|critical|essential|must|need to|have to|required|mandatory|compulsory|obligation|liability|responsibility|consequences|penalty|fine|charge|interest|late fee)\b/i,
+  
+  // Problem and concern indicators
+  concern: /\b(problem|issue|concern|worry|confused|confusing|unclear|uncertain|unsure|don't understand|can't|cannot|unable|difficulty|trouble|challenge|obstacle|barrier|mistake|error|wrong|incorrect|dispute|disagreement|complaint|dissatisfied|unhappy|frustrated|stressed|anxious|nervous|scared|worried)\b/i
+};
+
+// Simple Levenshtein distance calculation for fuzzy matching
+function levenshteinDistance(str1, str2) {
+  const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+  
+  for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+  for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+  
+  for (let j = 1; j <= str2.length; j++) {
+    for (let i = 1; i <= str1.length; i++) {
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1,     // deletion
+        matrix[j - 1][i] + 1,     // insertion
+        matrix[j - 1][i - 1] + indicator // substitution
+      );
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
+
+// Check if a word is a fuzzy match for any of the target terms
+function fuzzyMatch(word, targets, maxDistance = 2) {
+  const wordLower = word.toLowerCase();
+  return targets.some(target => {
+    if (target.length < 4) return wordLower === target; // Exact match for short words
+    const distance = levenshteinDistance(wordLower, target.toLowerCase());
+    const threshold = Math.min(maxDistance, Math.floor(target.length * 0.3)); // Max 30% of word length
+    return distance <= threshold;
+  });
+}
+
+// Extract terms from regex patterns for fuzzy matching
+function extractTermsFromPattern(pattern) {
+  // Convert regex to string and extract terms between word boundaries
+  const patternStr = pattern.source;
+  // Match terms between parentheses, split by pipes, clean up
+  const matches = patternStr.match(/\([^)]+\)/g);
+  if (!matches) return [];
+  
+  const terms = [];
+  matches.forEach(match => {
+    // Remove parentheses and split by pipe
+    const innerTerms = match.slice(1, -1).split('|');
+    innerTerms.forEach(term => {
+      // Clean up term: remove \b, backslashes, regex special chars
+      const cleanTerm = term.replace(/\\b|\\d\+|\\.|\+|\*|\?|\^|\$|\{|\}|\[|\]|\||\\./g, '').trim();
+      // Only keep meaningful terms (length > 3, no special regex syntax)
+      if (cleanTerm.length > 3 && !cleanTerm.includes('\\') && !cleanTerm.includes('.') && cleanTerm.indexOf(' ') === -1) {
+        terms.push(cleanTerm.toLowerCase());
+      }
+    });
+  });
+  
+  // Remove duplicates and return
+  return [...new Set(terms)];
+}
+
+// Dynamically generate fuzzy terms from existing patterns
+function getFuzzyTerms() {
+  const fuzzyTerms = {};
+  for (const [category, pattern] of Object.entries(ENHANCEMENT_PATTERNS)) {
+    fuzzyTerms[category] = extractTermsFromPattern(pattern);
+  }
+  return fuzzyTerms;
+}
+
+// Determine if a message needs additional context enhancement
+function shouldEnhanceMessage(userInput, messageHistory = [], enhancementCount = 0) {
+  const input = userInput.toLowerCase();
+  
+  // Limit enhancements to prevent token bloat
+  if (enhancementCount >= 3) return false;
+  
+  // Always enhance first message
+  if (messageHistory.length === 0) return true;
+  
+  // Check for pattern matches with scoring
+  let enhancementScore = 0;
+  const patternMatches = {};
+  
+  for (const [category, pattern] of Object.entries(ENHANCEMENT_PATTERNS)) {
+    const matches = input.match(pattern);
+    if (matches) {
+      patternMatches[category] = matches.length;
+      // Weight different categories
+      switch (category) {
+        case 'quantitative':
+        case 'financial':
+        case 'technical':
+          enhancementScore += matches.length * 2; // High priority
+          break;
+        case 'temporal':
+        case 'procedural':
+        case 'lifecycle':
+          enhancementScore += matches.length * 1.5; // Medium-high priority
+          break;
+        case 'comparative':
+        case 'urgency':
+        case 'concern':
+          enhancementScore += matches.length * 1.2; // Medium priority
+          break;
+        case 'detail':
+          enhancementScore += matches.length * 1; // Lower priority but still relevant
+          break;
+        default:
+          enhancementScore += matches.length * 1;
+      }
+    }
+  }
+  
+  // Add fuzzy matching for common misspellings
+  const words = input.split(/\s+/);
+  const fuzzyMatches = {};
+  const dynamicFuzzyTerms = getFuzzyTerms();
+  
+  for (const [category, terms] of Object.entries(dynamicFuzzyTerms)) {
+    let categoryMatches = 0;
+    for (const word of words) {
+      if (fuzzyMatch(word, terms)) {
+        categoryMatches++;
+      }
+    }
+    
+    if (categoryMatches > 0) {
+      fuzzyMatches[category] = categoryMatches;
+      // Apply same weighting as exact matches but with slightly lower score
+      switch (category) {
+        case 'quantitative':
+        case 'financial':
+        case 'technical':
+          enhancementScore += categoryMatches * 1.8; // Slightly lower than exact matches
+          break;
+        case 'temporal':
+        case 'procedural':
+        case 'lifecycle':
+          enhancementScore += categoryMatches * 1.3;
+          break;
+        case 'comparative':
+        case 'urgency':
+        case 'concern':
+          enhancementScore += categoryMatches * 1.1;
+          break;
+        case 'detail':
+          enhancementScore += categoryMatches * 0.9;
+          break;
+        default:
+          enhancementScore += categoryMatches * 1;
+      }
+    }
+  }
+  
+  // Log pattern and fuzzy matches for debugging
+  if (Object.keys(patternMatches).length > 0 || Object.keys(fuzzyMatches).length > 0) {
+    console.log(`Pattern matches:`, patternMatches, `Fuzzy matches:`, fuzzyMatches, `Total score: ${enhancementScore}`);
+  }
+  
+  // Threshold for enhancement (adjust as needed)
+  return enhancementScore >= 1;
 }
 
 // Create chat instances for a conversation
-async function createConversationChats(userInput) {
-  const comprehensiveSystemInstruction = await buildComprehensiveSystemInstruction(userInput);
+async function createConversationChats() {
+  const systemInstruction = await buildSystemInstructionWithMediumContext();
   
   const mainChat = ai.chats.create({
     model: "gemini-2.0-flash",
     config: {
-      systemInstruction: comprehensiveSystemInstruction,
+      systemInstruction: systemInstruction,
     },
   });
 
@@ -118,7 +310,9 @@ export async function startConversation() {
     activeConversations.set(conversationId, {
       createdAt: Date.now(),
       mainChat: null,
-      proofreadChat: null
+      proofreadChat: null,
+      messageHistory: [],
+      enhancementCount: 0
     });
     
     return conversationId;
@@ -145,15 +339,41 @@ export async function sendMessage(conversationId, userInput) {
     // Create chat instances on first message (lazy initialization)
     if (!conversation.mainChat || !conversation.proofreadChat) {
       console.log(`Creating chat instances for conversation ${conversationId}`);
-      const { mainChat, proofreadChat } = await createConversationChats(userInput);
+      const { mainChat, proofreadChat } = await createConversationChats();
       conversation.mainChat = mainChat;
       conversation.proofreadChat = proofreadChat;
       activeConversations.set(conversationId, conversation);
     }
 
-    // Send only the user input (context is already in system instruction)
-    console.log("Sending user input to Gemini (stage 1):", userInput);
-    const result = await conversation.mainChat.sendMessage({ message: userInput });
+    // Determine if this message needs enhancement
+    await ensureStaticLoaded();
+    const needsEnhancement = shouldEnhanceMessage(userInput, conversation.messageHistory, conversation.enhancementCount);
+    
+    let enhancedMessage = userInput;
+    if (needsEnhancement) {
+      console.log("Message needs enhancement - getting additional context");
+      const relevantContext = getMessageSpecificContext(_staticData, userInput);
+      
+      enhancedMessage = `${userInput}
+
+[Additional relevant context for this specific question:]
+${relevantContext}`;
+      
+      conversation.enhancementCount++;
+      console.log(`Enhanced message (enhancement #${conversation.enhancementCount})`);
+    }
+
+    // Add to message history
+    conversation.messageHistory.push(userInput);
+    // Keep only last 5 messages for performance
+    if (conversation.messageHistory.length > 5) {
+      conversation.messageHistory = conversation.messageHistory.slice(-5);
+    }
+    activeConversations.set(conversationId, conversation);
+
+    // Send the (possibly enhanced) message
+    console.log("Sending user input to Gemini (stage 1):", needsEnhancement ? "Enhanced message" : "Original message");
+    const result = await conversation.mainChat.sendMessage({ message: enhancedMessage });
     const initialText = result.text;
     console.log("Received initial Gemini response:", initialText);
 
