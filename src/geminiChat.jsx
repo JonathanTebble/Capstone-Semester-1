@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { loadStaticData, buildMediumReferenceText, getMessageSpecificContext } from "./loadStaticData";
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+console.log(import.meta.env.VITE_GEMINI_API_KEY);
 
 // Base system instruction template
 const baseSystemInstruction = `

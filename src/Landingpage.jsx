@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
 import { startConversation, sendMessage, endConversation } from "./geminiChat";
-
+console.log(import.meta.env.VITE_GEMINI_API_KEY);
 // add d
 import { highlightResponseWithSources } from "./referenceHighlighter";
 
