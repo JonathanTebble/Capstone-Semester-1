@@ -190,14 +190,14 @@ function blockifyWithBullets(htmlSafeText) {
   while (i < lines.length) {
     const line = lines[i];
 
-    // Match a bullet line: starts with optional spaces then one of *, -, or • followed by space
-    const bulletMatch = line.match(/^\s*([*\-•])\s+(.*)$/);
+    // Match a bullet line: starts with optional spaces then various list indicators followed by space
+    const bulletMatch = line.match(/^\s*([*\-•]|\d+[\.\)]|\w[\.\)]|[ivxlcdm]+[\.\)]|[IVXLCDM]+[\.\)]|[αβγδεζηθικλμνξοπρστυφχψω][\.\)]|\([*\-•\d+\w+ivxlcdm+IVXLCDM+αβγδεζηθικλμνξοπρστυφχψω]+\)|[\u2022\u2023\u2043\u204C\u204D\u2219\u25AA\u25AB\u25B8\u25B9\u25BA\u25BB\u25BC\u25BD\u25BE\u25BF\u25C6\u25C7\u25C8\u25C9\u25CB\u25CC\u25CF\u25D0\u25D1\u25D2\u25D3\u25D4\u25D5\u25E6\u25FE\u2739\u273A\u273B\u273C\u273D\u2765\u2766\u2767])\s+(.*)$/);
 
     if (bulletMatch) {
       // Start a list; collect consecutive bullet lines
       out.push('<ul class="terah-list">');
       while (i < lines.length) {
-        const m = lines[i].match(/^\s*([*\-•])\s+(.*)$/);
+        const m = lines[i].match(/^\s*([*\-•]|\d+[\.\)]|\w[\.\)]|[ivxlcdm]+[\.\)]|[IVXLCDM]+[\.\)]|[αβγδεζηθικλμνξοπρστυφχψω][\.\)]|\([*\-•\d+\w+ivxlcdm+IVXLCDM+αβγδεζηθικλμνξοπρστυφχψω]+\)|[\u2022\u2023\u2043\u204C\u204D\u2219\u25AA\u25AB\u25B8\u25B9\u25BA\u25BB\u25BC\u25BD\u25BE\u25BF\u25C6\u25C7\u25C8\u25C9\u25CB\u25CC\u25CF\u25D0\u25D1\u25D2\u25D3\u25D4\u25D5\u25E6\u25FE\u2739\u273A\u273B\u273C\u273D\u2765\u2766\u2767])\s+(.*)$/);
         if (!m) break;
         const item = m[2].trim(); // may contain <a>…</a>
         out.push(`<li>${item}</li>`);

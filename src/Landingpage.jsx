@@ -111,7 +111,7 @@ const handleSendMessage = async () => {
         botText = "Something went wrong.";
         staticRef = null;
       }
-      console.log("Parsed - botText:", botText, "staticRef:", staticRef); // DEBUG
+      
 
       // transition thinking bubble into typing bubble
       setMessages(prev =>
@@ -125,10 +125,8 @@ const handleSendMessage = async () => {
       // Type out plain text first, then process HTML with references
       typeResponse(botText, () => {
         if (staticRef) {
-          console.log("Processing with staticRef:", staticRef); // DEBUG
           // Process response with reference highlighting
-          const html = highlightResponseWithSources(botText, staticRef);
-          console.log("Generated HTML:", html); // DEBUG
+          const html = highlightResponseWithSources(botText, staticRef)
           
           // Replace the last bot message with HTML-rendered version
           setMessages(prev => {

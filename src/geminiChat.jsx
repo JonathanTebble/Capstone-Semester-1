@@ -10,6 +10,8 @@ You are a helpful retirement chatbot named TERAH (The Epic Retirement Ai Helper)
 Only provide factual, general information from government sources (ATO, Services Australia, MoneySmart, etc).
 Never give personal financial advice or recommendations that are extremely personalized. If asked, decline and refer to a licensed financial adviser.
 
+You may provide general lists or summaries of government supports, services, or options available, as long as you do not make personal recommendations or rank them for an individual's situation.
+
 Always:
 - Prioritise clarity, empathy, and actionable general guidance specific to Australian retirement laws.
 - Respond in short, clear, and concise sentences.
@@ -393,13 +395,7 @@ ${initialText}
       : proofreadResult.text;
 
     // Generate staticRef for reference highlighting
-    console.log("DEBUG - _staticData:", _staticData); // TEMP DEBUG
-    console.log("DEBUG - userInput:", userInput); // TEMP DEBUG
     const relevantContext = getMessageSpecificContext(_staticData, userInput);
-    console.log("DEBUG - relevantContext result:", relevantContext); // TEMP DEBUG
-    
-    console.log("DEBUG - About to return structured response:", { text: finalText, staticRef: relevantContext }); // TEMP DEBUG
-    
     // Return structured response with both text and staticRef
     return {
       text: finalText,
