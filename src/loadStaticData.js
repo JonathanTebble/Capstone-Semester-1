@@ -7,15 +7,13 @@ import absUrl from "./Data/ABS_Retirement_Comparison.xlsx?url";
 import trpUrl from "./Data/Transition_Retirement_Plans.xlsx?url";
 
 
-const MAX_MATCHES_PER_SHEET = 60;     // tune for recall vs size
-const MAX_CONTEXT_CHARS     = 12000;  // hard budget for prompt size
 
-let _csvCache = null;                 // DSS csv rows
-let _xlsxCache = null;                // { absSheets, trpSheets }
+const ROW_CAP = 50;           // keep things small for the model (might take too long to go through)
+const CHAR_CAP_TEXT = 20000;  // per long text source
 
-function parseCsvRaw(raw) {
-  if (!raw) return [];
-  const { data } = Papa.parse(raw, {
+export async function loadStaticData() {
+  // CSV → array of objects
+  const demographicsCsv = Papa.parse(demographicsCsvRaw, {
     header: true,
     skipEmptyLines: true,
     dynamicTyping: true,

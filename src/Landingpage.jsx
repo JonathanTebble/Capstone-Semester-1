@@ -2,6 +2,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
+import { sendToGemini } from "./geminiChat1";
+
+// add d
+import { highlightResponseWithSources } from "./referenceHighlighter";
+
 
 import { sendToGeminiHtml } from "./geminiChat";
 // import { sendToGemini } from "./geminiChat"; // old
@@ -25,74 +30,109 @@ function LandingPage() {
     }
   };
 
-function stripHtmlToText(html) {
-  if (!html) return "";
-  const cleaned = html
-    .replace(/\[\[cite:\s*[^\]]+?\s*\]\]/gi, "")
-    .replace(/\[\[\/cite\]\]/gi, "")
-    .replace(/^\s*CITES:.*$/gmi, "")
-    .replace(/^\s*ACCEPTABLE\s*$/gmi, "")    // <— new
-    .replace(/\n+\s*ACCEPTABLE\s*$/i, "");   // <— new
-  const div = document.createElement("div");
-  div.innerHTML = cleaned;
-  return (div.textContent || div.innerText || "").trim();
-}
-
-
-
-  const handleSendMessage = async () => {
-    if (message.trim() && !isTyping) {
-      const userText = message.trim();
-      setMessages((prev) => [...prev, { type: "user", text: userText }]);
-      setMessage("");
-      setIsTyping(true);
-
-      try {
-        const placeholderIndex = (() => {
-          let idx = -1;
-          setMessages((prev) => {
-            const copy = [...prev, { type: "bot", text: "", isTyping: true }];
-            idx = copy.length - 1;
-            return copy;
-          });
-          return () => idx;
-        })();
-
-        const htmlReply = (await sendToGeminiHtml(userText, { proofread: true })) || "";
-        const plainForTyping = stripHtmlToText(htmlReply);
-
-        let i = 0;
-        const typeInterval = setInterval(() => {
-          i++;
-          setMessages((prev) => {
-            const copy = [...prev];
-            const idx = placeholderIndex();
-            if (!copy[idx]) return prev;
-            copy[idx] = { ...copy[idx], text: plainForTyping.slice(0, i), isTyping: true };
-            return copy;
-          });
-          if (i >= plainForTyping.length) {
-            clearInterval(typeInterval);
-            setMessages((prev) => {
-              const copy = [...prev];
-              const idx = placeholderIndex();
-              if (!copy[idx]) return prev;
-              copy[idx] = { type: "bot", html: htmlReply, isTyping: false };
-              return copy;
-            });
-            setIsTyping(false);
+  const typeResponse = (response, callback) => {
+    let i = 0;
+    const typingInterval = setInterval(() => {
+      if (i < response.length) {
+        setMessages(prev => {
+          const lastMsg = prev[prev.length - 1];
+          // If the last message is a bot message and it's still typing, update it
+          if (lastMsg && lastMsg.type === "bot" && lastMsg.isTyping) {
+            return [
+              ...prev.slice(0, -1),
+              {
+                ...lastMsg,
+                text: response.substring(0, i + 1),
+                isTyping: true
+              }
+            ];
           }
-        }, 20);
-      } catch (err) {
-        console.error(err);
-        setMessages((prev) => [
-          ...prev,
-          { type: "bot", text: "Something went wrong.", isTyping: false },
-        ]);
-        setIsTyping(false);
+          // Otherwise, add a new bot message (for the first character or if previous was not typing bot)
+          return [
+            ...prev,
+            {
+              type: "bot",
+              text: response.substring(0, i + 1),
+              isTyping: true
+            }
+          ];
+        });
+        i++;
+      } else {
+        clearInterval(typingInterval);
+        setMessages(prev => {
+          const lastMsg = prev[prev.length - 1];
+          // Set isTyping to false for the last bot message
+          return [
+            ...prev.slice(0, -1),
+            {
+              ...lastMsg,
+              isTyping: false
+            }
+          ];
+        });
+        callback(); // Callback to set isTyping to false for the whole component
       }
-    }
+    }, 30); // Adjust typing speed here (lower = faster)
   };
+
+  //old
+  // const handleSendMessage = async () => {
+  //   if (message.trim() && !isTyping) {
+  //     const userText = message.trim();
+  //     setMessages(prev => [...prev, { type: "user", text: userText }]);
+  //     setMessage("");
+  //     setIsTyping(true);
+
+  //     try {
+  //       const response = await sendToGemini(userText);
+  //       typeResponse(response, () => setIsTyping(false));
+  //     } catch {
+  //       typeResponse("Something went wrong.", () => setIsTyping(false));
+  //     }
+  //   }
+  // };
+
+  //new
+  const handleSendMessage = async () => {
+  if (message.trim() && !isTyping) {
+    const userText = message.trim();
+    setMessages(prev => [...prev, { type: "user", text: userText }]);
+    setMessage("");
+    setIsTyping(true);
+
+    try {
+      const { text: botText, staticRef } = await sendToGemini(userText);
+
+      // 1) type out plain text (for the typing animation)
+      typeResponse(botText, () => {
+        // 2) when typing ends, post-process to HTML with references
+        const html = highlightResponseWithSources(botText, staticRef);
+
+        // replace the last bot message with an HTML-rendered one
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          // last is the bot message with isTyping false now
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...last,
+            text: botText,    // keep text for fallback
+            html,             // new field
+            isHtml: true,     // flag to render as HTML
+            isTyping: false,
+          };
+          return updated;
+        });
+
+        setIsTyping(false);
+      });
+    } catch {
+      typeResponse("Something went wrong.", () => setIsTyping(false));
+    }
+  }
+};
+
+
 
   useEffect(() => {
     if (chatScrollRef.current) {
@@ -168,55 +208,61 @@ function stripHtmlToText(html) {
             <p style={{ margin: 0, fontWeight: "bold" }}>Hi {name}, I'm Terah the retirement bot!</p>
             <p style={{ margin: 0 }}>How can I help you today?</p>
           </div>
+          
+          {/* Old */}
+          {/* {messages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={
+                msg.type === "user"
+                  ? "chatbox-user-bubble"
+                  : "chatbox-message-bubble"
+              }
+            >
+              <p style={{ margin: 0 }}>{msg.text}</p>
+              {msg.isTyping && (
+                <span className="typing-indicator">
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                </span>
+              )}
+            </div>
+          ))} */}
 
-          {messages.map((msg, idx) => {
-            if (msg.type === "user") {
-              return (
-                <div key={idx} className="chatbox-user-bubble">
-                  <p style={{ margin: 0 }}>{msg.text}</p>
-                </div>
-              );
-            }
 
-            if (msg.isTyping && (!msg.text || msg.text.length === 0)) {
-              return (
-                <div key={idx} className="chatbox-typing-row">
-                  <span className="typing-indicator">
-                    <span className="typing-dot"></span>
-                    <span className="typing-dot"></span>
-                    <span className="typing-dot"></span>
-                  </span>
-                </div>
-              );
-            }
+          {/* New */}
+          {messages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={
+                msg.type === "user"
+                  ? "chatbox-user-bubble"
+                  : "chatbox-message-bubble"
+              }
+            >
+              {/* If html exists, render it safely; else render plain text */}
+              {msg.isHtml ? (
+                <div
+                  className="terah-content"
+                  dangerouslySetInnerHTML={{ __html: msg.html }}
+                />
+              ) : (
+                <p style={{ margin: 0 }}>{msg.text}</p>
+              )}
 
-            if (msg.isTyping) {
-              return (
-                <div key={idx} className="chatbox-message-bubble">
-                  <p style={{ margin: 0 }}>{msg.text}</p>
-                  <span className="typing-indicator">
-                    <span className="typing-dot"></span>
-                    <span className="typing-dot"></span>
-                    <span className="typing-dot"></span>
-                  </span>
-                </div>
-              );
-            }
 
-            return (
-              <div key={idx} className="chatbox-message-bubble">
-                {msg.html ? (
-                  <div
-                    style={{ margin: 0, whiteSpace: "pre-wrap", lineHeight: 1.5 }}
-                    dangerouslySetInnerHTML={{ __html: msg.html }}
-                  />
-                ) : (
-                  <p style={{ margin: 0 }}>{msg.text}</p>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              {msg.isTyping && (
+                <span className="typing-indicator">
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                </span>
+              )}
+            </div>
+          ))}
+
+        </div> {/* End of chatbox-scroll-container */}
 
         <div className="chatbox-input-container">
           <input

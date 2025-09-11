@@ -189,33 +189,25 @@
   min-height: 500px !important;
 }
 
-/* === Inline citation link + tooltip === */
-.inline-cite {
-  position: relative;
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  cursor: help;
+/* Structured content inside bot bubbles */
+.terah-content p {
+  margin: 0 0 12px;           /* paragraph spacing */
+  line-height: 1.5;
 }
 
-.inline-cite::after {
-  content: attr(data-url) " ↗";
-  position: absolute;
-  left: 0;
-  bottom: 100%;
-  transform: translateY(-6px);
-  background: rgba(0,0,0,0.85);
+.terah-content ul {
+  margin: 0 0 12px 20px;      /* list spacing & indent */
+  padding: 0;
+  list-style: disc;           /* circle bullet (filled) */
+  list-style-position: outside;
+}
+
+.terah-content li {
+  margin: 4px 0;
+}
+
+/* Ensure links are readable on gradient bubbles */
+.chatbox-message-bubble a {
   color: #fff;
-  padding: 6px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .15s ease, transform .15s ease;
-  z-index: 9999;
-}
-
-.inline-cite:hover::after {
-  opacity: 1;
-  transform: translateY(-8px);
+  text-decoration: underline;
 }
