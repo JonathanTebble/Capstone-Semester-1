@@ -3,7 +3,7 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
 import dssCsvRaw from "./Data/dss-demographics-2021-sa2-june-2025.csv?raw";
-import absUrl from "./Data/ABS_Retirement_Comparison.xlsx?url";
+import absUrl from "./Data/ABS_Retirement_Comparison.csv?raw";
 import trpUrl from "./Data/Transition_Retirement_Plans.xlsx?url";
 
 
