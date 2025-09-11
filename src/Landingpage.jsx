@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
-import { startConversation, sendMessage, endConversation } from "./geminiChat";
-console.log(import.meta.env.VITE_GEMINI_API_KEY);
+import { startConversation, sendMessage, endConversation, sendToGemini } from "./geminiChat";
 // add d
 import { highlightResponseWithSources } from "./referenceHighlighter";
 
@@ -95,7 +94,24 @@ const handleSendMessage = async () => {
       // Use the conversation API to maintain memory
       const response = conversationId 
         ? await sendMessage(conversationId, userText)
-        : await sendToGemini(userText); // Fallback if no conversation ID
+        : "Please start a conversation first."; // Require conversation
+
+      // Handle different response formats
+      console.log("Raw response:", response); // DEBUG
+      let botText, staticRef;
+      if (typeof response === 'string') {
+        // Simple string response from conversation API
+        botText = response;
+        staticRef = null;
+      } else if (response && response.text) {
+        // Structured response with references
+        botText = response.text;
+        staticRef = response.staticRef;
+      } else {
+        botText = "Something went wrong.";
+        staticRef = null;
+      }
+      console.log("Parsed - botText:", botText, "staticRef:", staticRef); // DEBUG
 
       // transition thinking bubble into typing bubble
       setMessages(prev =>
@@ -106,7 +122,32 @@ const handleSendMessage = async () => {
         )
       );
 
-      typeResponse(response, () => setIsTyping(false));
+      // Type out plain text first, then process HTML with references
+      typeResponse(botText, () => {
+        if (staticRef) {
+          console.log("Processing with staticRef:", staticRef); // DEBUG
+          // Process response with reference highlighting
+          const html = highlightResponseWithSources(botText, staticRef);
+          console.log("Generated HTML:", html); // DEBUG
+          
+          // Replace the last bot message with HTML-rendered version
+          setMessages(prev => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              text: botText,
+              html,
+              isHtml: true,
+              isTyping: false
+            };
+            return updated;
+          });
+        } else {
+          console.log("No staticRef found, skipping highlighting"); // DEBUG
+        }
+        setIsTyping(false);
+      });
     } catch {
       setMessages(prev =>
         prev.map(msg =>
@@ -223,7 +264,11 @@ const handleSendMessage = async () => {
                 </div>
               ) : (
                 <div className="chatbox-message-bubble">
-                  <p style={{ margin: 0 }}>{msg.text}</p>
+                  {msg.isHtml ? (
+                    <div style={{ margin: 0 }} dangerouslySetInnerHTML={{ __html: msg.html }} />
+                  ) : (
+                    <p style={{ margin: 0 }}>{msg.text}</p>
+                  )}
                 </div>
               )}
             </div>

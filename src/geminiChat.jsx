@@ -3,7 +3,6 @@ import { GoogleGenAI } from "@google/genai";
 import { loadStaticData, buildMediumReferenceText, getMessageSpecificContext } from "./loadStaticData";
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
-console.log(import.meta.env.VITE_GEMINI_API_KEY);
 
 // Base system instruction template
 const baseSystemInstruction = `
@@ -388,11 +387,24 @@ ${initialText}
     const proofreadResult = await conversation.proofreadChat.sendMessage({ message: proofreadMessage });
     console.log("Received proofread Gemini response:", proofreadResult.text);
 
-    // If Gemini says "ACCEPTABLE", return the original response
-    if (proofreadResult.text.trim().toUpperCase() === "ACCEPTABLE") {
-      return initialText;
-    }
-    return proofreadResult.text;
+    // Get the final response text
+    const finalText = proofreadResult.text.trim().toUpperCase() === "ACCEPTABLE" 
+      ? initialText 
+      : proofreadResult.text;
+
+    // Generate staticRef for reference highlighting
+    console.log("DEBUG - _staticData:", _staticData); // TEMP DEBUG
+    console.log("DEBUG - userInput:", userInput); // TEMP DEBUG
+    const relevantContext = getMessageSpecificContext(_staticData, userInput);
+    console.log("DEBUG - relevantContext result:", relevantContext); // TEMP DEBUG
+    
+    console.log("DEBUG - About to return structured response:", { text: finalText, staticRef: relevantContext }); // TEMP DEBUG
+    
+    // Return structured response with both text and staticRef
+    return {
+      text: finalText,
+      staticRef: relevantContext
+    };
   } catch (error) {
     console.error("Error in sendMessage:", error);
     throw error;
