@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./App.css";
 import { startConversation, sendMessage, endConversation, sendToGemini } from "./geminiChat";
-// add d
 import { highlightResponseWithSources } from "./referenceHighlighter";
 
 
@@ -17,7 +16,8 @@ function LandingPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState(null);
   const chatScrollRef = useRef(null);
-  
+  const [copiedIdx, setCopiedIdx] = useState(null);
+
 
   const toggleChat = () => setIsOpen(!isOpen);
 
@@ -73,92 +73,172 @@ function LandingPage() {
         });
         callback();
       }
-    },30);
+    }, 30);
   };
 
   // Inside handleSendMessage
-const handleSendMessage = async () => {
-  if (message.trim() && !isTyping) {
-    const userText = message.trim();
-    setMessages(prev => [...prev, { type: "user", text: userText }]);
-    setMessage("");
-    setIsTyping(true);
+  const handleSendMessage = async () => {
+    if (message.trim() && !isTyping) {
+      const userText = message.trim();
+      setMessages(prev => [...prev, { type: "user", text: userText }]);
+      setMessage("");
+      setIsTyping(true);
 
-    // temporary "thinking" dot
-    setMessages(prev => [
-      ...prev,
-      { type: "bot", text: "", isThinking: true }
-    ]);
+      // temporary "thinking" dot
+      setMessages(prev => [
+        ...prev,
+        { type: "bot", text: "", isThinking: true }
+      ]);
 
-    try {
-      // Use the conversation API to maintain memory
-      const response = conversationId 
-        ? await sendMessage(conversationId, userText)
-        : "Please start a conversation first."; // Require conversation
+      try {
+        // Use the conversation API to maintain memory
+        const response = conversationId
+          ? await sendMessage(conversationId, userText)
+          : "Please start a conversation first."; // Require conversation
 
-      // Handle different response formats
-      console.log("Raw response:", response); // DEBUG
-      let botText, staticRef;
-      if (typeof response === 'string') {
-        // Simple string response from conversation API
-        botText = response;
-        staticRef = null;
-      } else if (response && response.text) {
-        // Structured response with references
-        botText = response.text;
-        staticRef = response.staticRef;
-      } else {
-        botText = "Something went wrong.";
-        staticRef = null;
-      }
-      
-
-      // transition thinking bubble into typing bubble
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.isThinking
-            ? { ...msg, isThinking: false, isTyping: true, text: "" }
-            : msg
-        )
-      );
-
-      // Type out plain text first, then process HTML with references
-      typeResponse(botText, () => {
-        if (staticRef) {
-          // Process response with reference highlighting
-          const html = highlightResponseWithSources(botText, staticRef)
-          
-          // Replace the last bot message with HTML-rendered version
-          setMessages(prev => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            updated[lastIndex] = {
-              ...updated[lastIndex],
-              text: botText,
-              html,
-              isHtml: true,
-              isTyping: false
-            };
-            return updated;
-          });
+        // Handle different response formats
+        console.log("Raw response:", response); // DEBUG
+        let botText, staticRef;
+        if (typeof response === 'string') {
+          // Simple string response from conversation API
+          botText = response;
+          staticRef = null;
+        } else if (response && response.text) {
+          // Structured response with references
+          botText = response.text;
+          staticRef = response.staticRef;
         } else {
-          console.log("No staticRef found, skipping highlighting"); // DEBUG
+          botText = "Something went wrong.";
+          staticRef = null;
         }
-        setIsTyping(false);
-      });
-    } catch {
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.isThinking
-            ? { ...msg, isThinking: false, isTyping: true, text: "Something went wrong." }
-            : msg
-        )
-      );
-      setIsTyping(false);
-    }
-  }
-};
 
+
+        // transition thinking bubble into typing bubble
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.isThinking
+              ? { ...msg, isThinking: false, isTyping: true, text: "" }
+              : msg
+          )
+        );
+
+        // Type out plain text first, then process HTML with references
+        typeResponse(botText, () => {
+          if (staticRef) {
+            // Process response with reference highlighting
+            const html = highlightResponseWithSources(botText, staticRef)
+
+            // Replace the last bot message with HTML-rendered version
+            setMessages(prev => {
+              const updated = [...prev];
+              const lastIndex = updated.length - 1;
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                text: botText,
+                html,
+                isHtml: true,
+                isTyping: false
+              };
+              return updated;
+            });
+          } else {
+            console.log("No staticRef found, skipping highlighting"); // DEBUG
+          }
+          setIsTyping(false);
+        });
+      } catch {
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.isThinking
+              ? { ...msg, isThinking: false, isTyping: true, text: "Something went wrong." }
+              : msg
+          )
+        );
+        setIsTyping(false);
+      }
+    }
+  };
+  const handleRedo = async (botMessageIdx) => {
+    if (isTyping) return; // Prevent multiple requests
+
+    // The user's message is at the previous index
+    const userMessage = messages[botMessageIdx - 1];
+
+    if (userMessage && userMessage.type === 'user') {
+      // Only remove the old bot message
+      setMessages(prev => prev.slice(0, botMessageIdx));
+
+      const userTextToRedo = userMessage.text;
+
+      setIsTyping(true);
+      setMessages(prev => [
+        ...prev,
+        { type: "bot", text: "", isThinking: true }
+      ]);
+
+      try {
+        const response = await sendMessage(conversationId, userTextToRedo);
+
+        let botText, staticRef;
+        if (typeof response === 'string') {
+          botText = response;
+          staticRef = null;
+        } else if (response && response.text) {
+          botText = response.text;
+          staticRef = response.staticRef;
+        } else {
+          botText = "Something went wrong.";
+          staticRef = null;
+        }
+
+        setMessages(prev => {
+          const thinkingIndex = prev.findIndex(msg => msg.isThinking);
+          if (thinkingIndex > -1) {
+            prev.splice(thinkingIndex, 1);
+          }
+          return [...prev, { type: "bot", text: "", isTyping: true, staticRef }];
+        });
+
+        typeResponse(botText, () => {
+          if (staticRef) {
+            const html = highlightResponseWithSources(botText, staticRef);
+            setMessages(prev => {
+              const updated = [...prev];
+              const lastIndex = updated.length - 1;
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                text: botText,
+                html,
+                isHtml: true,
+                isTyping: false
+              };
+              return updated;
+            });
+          } else {
+            setMessages(prev => {
+              const updated = [...prev];
+              const lastIndex = updated.length - 1;
+              updated[lastIndex] = { ...updated[lastIndex], text: botText, isTyping: false };
+              return updated;
+            });
+          }
+          setIsTyping(false);
+        });
+      } catch (error) {
+        console.error("Redo failed:", error);
+        setIsTyping(false);
+        setMessages(prev => {
+          const thinkingIndex = prev.findIndex(msg => msg.isThinking);
+          if (thinkingIndex > -1) {
+            prev.splice(thinkingIndex, 1);
+          }
+          return [...prev, { type: "bot", text: "Something went wrong with the redo.", isTyping: false }];
+        });
+      }
+    } else {
+      console.warn("Could not find user message to redo.");
+    }
+  };
 
   useEffect(() => {
     if (chatScrollRef.current) {
@@ -261,16 +341,51 @@ const handleSendMessage = async () => {
                   <span className="typing-dot"></span>
                 </div>
               ) : (
-                <div className="chatbox-message-bubble">
+                <div
+                  className="chatbox-message-bubble"
+                  style={{ position: "relative" }}
+                  onMouseEnter={(e) => e.currentTarget.classList.add("show-copy")}
+                  onMouseLeave={(e) => e.currentTarget.classList.remove("show-copy")}
+                >
                   {msg.isHtml ? (
-                    <div style={{ margin: 0 }} dangerouslySetInnerHTML={{ __html: msg.html }} />
+                    <div
+                      style={{ margin: 0 }}
+                      dangerouslySetInnerHTML={{ __html: msg.html }}
+                    />
                   ) : (
                     <p style={{ margin: 0 }}>{msg.text}</p>
+                  )}
+                  {!msg.isTyping && (
+                    <>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(msg.text);
+                            setCopiedIdx(idx);
+                            setTimeout(() => setCopiedIdx(null), 1500);
+                          } catch (err) {
+                            console.error("Failed to copy:", err);
+                          }
+                        }}
+                        className="copy-button"
+                        style={{ left: "-2px" }}
+                      >
+                        {copiedIdx === idx ? "✓" : "⎘"}
+                      </button>
+                      <button
+                        onClick={() => handleRedo(idx)}
+                        className="redo-button"
+                        style={{ left: "26px" }}
+                      >
+                        ⟳
+                      </button>
+                    </>
                   )}
                 </div>
               )}
             </div>
           ))}
+
 
         </div>
 
