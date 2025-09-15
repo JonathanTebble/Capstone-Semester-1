@@ -16,13 +16,17 @@ function LandingPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState(null);
   const chatScrollRef = useRef(null);
+  const nameInputRef = useRef(null);
+  const chatInputRef = useRef(null);
   const [copiedIdx, setCopiedIdx] = useState(null);
+  const [showError, setShowError] = useState(false);
 
 
   const toggleChat = () => setIsOpen(!isOpen);
 
   const handleStartChat = async () => {
     if (name.trim() && location.trim()) {
+      setShowError(false); // Clear any existing error
       // Start a new conversation when chat begins
       try {
         const convId = await startConversation();
@@ -33,6 +37,10 @@ function LandingPage() {
         // Still show chat page even if conversation start fails
         setShowChatPage(true);
       }
+    } else {
+      setShowError(true);
+      // Auto-hide error after 3 seconds
+      setTimeout(() => setShowError(false), 3000);
     }
   };
 
@@ -246,6 +254,20 @@ function LandingPage() {
     }
   }, [messages]);
 
+  // Focus on name input when chat opens
+  useEffect(() => {
+    if (isOpen && !showChatPage && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [isOpen, showChatPage]);
+
+  // Focus on chat input when entering chat page
+  useEffect(() => {
+    if (showChatPage && chatInputRef.current) {
+      chatInputRef.current.focus();
+    }
+  }, [showChatPage]);
+
   const handleClose = () => {
     // End the conversation when closing chat
     if (conversationId) {
@@ -394,6 +416,7 @@ function LandingPage() {
             type="text"
             placeholder="Ask anything here!"
             className="chatbox-chat-input"
+            ref={chatInputRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
@@ -484,6 +507,7 @@ function LandingPage() {
                   type="text"
                   placeholder="Enter your name"
                   className="chatbox-input"
+                  ref={nameInputRef}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -501,6 +525,19 @@ function LandingPage() {
               <button className="chatbox-button" onClick={handleStartChat}>
                 Start Chat →
               </button>
+              {showError && (
+                <div style={{ 
+                  color: "#d32f2f", 
+                  fontSize: "14px", 
+                  marginTop: "5px",
+                  padding: "5px",
+                  backgroundColor: "#ffebee",
+                  border: "1px solid #ffcdd2",
+                  borderRadius: "4px"
+                }}>
+                  Please enter your name and location
+                </div>
+              )}
               <p className="chatbox-policy">
                 We save no data - read our{" "}
                 <a href="#" className="chatbox-link">
