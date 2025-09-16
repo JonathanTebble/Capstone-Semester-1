@@ -511,6 +511,48 @@
   word-break: break-word;
 }
 
+/* Sticky Start Chat button only in large mode */
+
+.chatbox-large .chatbox-button-wrapper {
+  position: absolute;
+  /* or fixed relative to chatbox */
+  bottom: 12px;
+  /* distance from bottom of the container */
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0 24px;
+  z-index: 2;
+  background: linear-gradient(0deg, rgba(253, 246, 240, 0.98), rgba(253, 246, 240, 0.98));
+}
+
+/* Large mode landing form inputs */
+.chatbox-large .chatbox-input {
+  max-width: 300px;
+  /* keep inputs smallish */
+  width: 100%;
+  margin: 8px 0;
+  /* spacing between fields */
+  display: block;
+}
+
+/* location and name in large mode */
+.chatbox-large .landing-form-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 1px;
+  padding-top: 1px;
+}
+
+
+/* Move policy text under inputs in large mode */
+.chatbox-large .chatbox-policy {
+  margin-top: 12px;
+}
+
+
 .typing-indicator {
   display: flex;
   gap: 4px;

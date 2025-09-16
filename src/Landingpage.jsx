@@ -392,14 +392,22 @@ function LandingPage() {
                         className="copy-button"
                         style={{ left: "-2px" }}
                       >
-                        {copiedIdx === idx ? "✓" : "⎘"}
+                        <img
+                          src={`/src/assets/${copiedIdx === idx ? "Tickicon.png" : "Copyicon.png"}`}
+                          alt={copiedIdx === idx ? "Copied" : "Copy"}
+
+                        />
                       </button>
                       <button
                         onClick={() => handleRedo(idx)}
                         className="redo-button"
                         style={{ left: "26px" }}
                       >
-                        ⟳
+                        <img
+                          src="/src/assets/Retryicon.png"
+                          alt="Redo"
+
+                        />
                       </button>
                     </>
                   )}
@@ -500,7 +508,7 @@ function LandingPage() {
               </p>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <div className={`landing-form-container ${isLarge ? "chatbox-large-form" : ""}`}>
               <label>
                 Name
                 <input
@@ -522,13 +530,11 @@ function LandingPage() {
                   onChange={(e) => setLocation(e.target.value)}
                 />
               </label>
-              <button className="chatbox-button" onClick={handleStartChat}>
-                Start Chat →
-              </button>
+
               {showError && (
-                <div style={{ 
-                  color: "#d32f2f", 
-                  fontSize: "14px", 
+                <div style={{
+                  color: "#d32f2f",
+                  fontSize: "14px",
                   marginTop: "5px",
                   padding: "5px",
                   backgroundColor: "#ffebee",
@@ -538,6 +544,13 @@ function LandingPage() {
                   Please enter your name and location
                 </div>
               )}
+
+              <div className="chatbox-button-wrapper">
+                <button className="chatbox-button" onClick={handleStartChat}>
+                  Start Chat →
+                </button>
+              </div>
+
               <p className="chatbox-policy">
                 We save no data - read our{" "}
                 <a href="#" className="chatbox-link">
