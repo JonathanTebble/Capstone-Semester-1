@@ -10,3 +10,49 @@ Currently, two official plugins are available:
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Docker Setup
+
+### Quick Start (Secure)
+
+1. **Install Docker Desktop** (if not already installed)
+2. **Run the setup script:**
+   ```bash
+   # Windows
+   docker-setup.bat
+   
+   # Linux/Mac
+   chmod +x docker-setup.sh
+   ./docker-setup.sh
+   ```
+
+### Manual Setup
+
+1. **Create environment file:**
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. **Add your API key to `.env.local`:**
+   ```
+   VITE_GEMINI_API_KEY=your_actual_api_key_here
+   ```
+
+3. **Run Docker:**
+   ```bash
+   # Production
+   docker-compose up --build
+   
+   # Development (with hot reloading)
+   docker-compose --profile dev up --build
+   ```
+
+### Access Your App
+- **Production**: http://localhost:3000
+- **Development**: http://localhost:5173
+
+### Security Notes
+- API keys are kept in `.env.local` (not tracked by git)
+- Use `.env.example` as a template
+- Production builds are optimized with nginx
+- Development builds support hot reloading

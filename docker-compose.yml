@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    container_name: capstone-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
+
+  # Development service (optional)
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    container_name: capstone-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
+    profiles:
+      - dev

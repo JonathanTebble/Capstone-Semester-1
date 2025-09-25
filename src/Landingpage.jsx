@@ -4,6 +4,12 @@ import "./App.css";
 import { startConversation, sendMessage, endConversation, sendToGemini } from "./geminiChat";
 import { highlightResponseWithSources } from "./referenceHighlighter";
 
+// Import assets properly for production builds
+import capstoneIcon from "./assets/capstoneicon1.png";
+import copyIcon from "./assets/Copyicon.png";
+import tickIcon from "./assets/Tickicon.png";
+import retryIcon from "./assets/Retryicon.png";
+
 
 function LandingPage() {
   const [isOpen, setIsOpen] = useState(false);
@@ -289,7 +295,7 @@ function LandingPage() {
             <div style={{ display: "flex", alignItems: "center" }}>
               <div className="chatbox-icon-circle">
                 <img
-                  src="/src/assets/capstoneicon1.png"
+                  src={capstoneIcon}
                   alt="Icon"
                   className="chatbox-icon-img"
                 />
@@ -393,7 +399,7 @@ function LandingPage() {
                         style={{ left: "-2px" }}
                       >
                         <img
-                          src={`/src/assets/${copiedIdx === idx ? "Tickicon.png" : "Copyicon.png"}`}
+                          src={copiedIdx === idx ? tickIcon : copyIcon}
                           alt={copiedIdx === idx ? "Copied" : "Copy"}
 
                         />
@@ -404,7 +410,7 @@ function LandingPage() {
                         style={{ left: "26px" }}
                       >
                         <img
-                          src="/src/assets/Retryicon.png"
+                          src={retryIcon}
                           alt="Redo"
 
                         />
@@ -442,7 +448,7 @@ function LandingPage() {
     <>
       {!isOpen && (
         <img
-          src="/src/assets/capstoneicon1.png"
+          src={capstoneIcon}
           alt="Capstone Icon"
           className="chatbox-launch-icon"
           onClick={toggleChat}
@@ -456,7 +462,7 @@ function LandingPage() {
               <div style={{ display: "flex", alignItems: "center" }}>
                 <div className="chatbox-icon-circle">
                   <img
-                    src="/src/assets/capstoneicon1.png"
+                    src={capstoneIcon}
                     alt="Icon"
                     className="chatbox-icon-img"
                   />
