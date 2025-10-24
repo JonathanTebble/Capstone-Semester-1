@@ -1,58 +1,148 @@
-# React + Vite
+---
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Terah Web Application
 
-Currently, two official plugins are available:
+This repository contains the **Terah web application**, developed using **React** and powered by **Vite** for fast and efficient front-end builds. The system was designed for scalability, ease of maintenance, and smooth developer experience.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The project has been containerised using **Docker** to simplify deployment and ensure consistency across environments.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Overview
 
-## Docker Setup
+The Terah application provides a lightweight and responsive web interface built with **React**, **Vite**, and **Node.js**. It has been designed with modularity in mind, allowing for straightforward maintenance and future extension.
 
-### Quick Start (Secure)
+All environment-specific configuration is managed via `.env` files and the build system is optimised for both development and production contexts.
 
-1. **Install Docker Desktop** (if not already installed)
+---
+
+## System Requirements
+
+**To run locally or in production, ensure the following are installed:**
+
+* **Node.js:** v18+
+* **npm:** v9+
+* **Docker Desktop:** Latest stable release (if running in containerised mode)
+* **Git:** For version control and repository management
+
+---
+
+## Installation & Setup
+
+### Local Development Setup
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/<your-org>/terah.git
+   cd terah
+   ```
+
+2. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+3. **Create and configure environment file:**
+
+   ```bash
+   cp .env .env
+   ```
+
+   Then open `.env` and add your specific environment variables:
+
+   ```
+   VITE_GEMINI_API_KEY=your_api_key_here
+   ```
+
+4. **Run the development server:**
+
+   ```bash
+   npm run dev
+   ```
+
+   The app will be available at:
+   **[http://localhost:5173](http://localhost:5173)**
+
+---
+
+## Docker Deployment
+
+### Quick Start
+
+1. **Ensure Docker Desktop is running.**
 2. **Run the setup script:**
+
    ```bash
    # Windows
    docker-setup.bat
-   
+
    # Linux/Mac
    chmod +x docker-setup.sh
    ./docker-setup.sh
    ```
 
-### Manual Setup
+This will build the container and start the application automatically.
 
-1. **Create environment file:**
-   ```bash
-   cp .env.example .env.local
-   ```
+---
 
-2. **Add your API key to `.env.local`:**
-   ```
-   VITE_GEMINI_API_KEY=your_actual_api_key_here
-   ```
+### Manual Docker Deployment
 
-3. **Run Docker:**
+1. **Build and start the application using Docker Compose:**
+
    ```bash
    # Production
    docker-compose up --build
-   
+
    # Development (with hot reloading)
    docker-compose --profile dev up --build
    ```
 
-### Access Your App
-- **Production**: http://localhost:3000
-- **Development**: http://localhost:5173
+2. **Access your application:**
 
-### Security Notes
-- API keys are kept in `.env.local` (not tracked by git)
-- Use `.env.example` as a template
-- Production builds are optimized with nginx
-- Development builds support hot reloading
+   * **Production:** [http://localhost:3000](http://localhost:3000)
+   * **Development:** [http://localhost:5173](http://localhost:5173)
+
+---
+
+## Running and Monitoring
+
+For local development, the React/Vite server automatically applies **Hot Module Reloading (HMR)**, ensuring instant reflection of changes in the browser.
+
+For production environments:
+
+* The app runs through an **nginx** container for optimized static file serving.
+* Logs can be viewed using:
+
+  ```bash
+  docker logs <container_name>
+  ```
+* Health can be checked via HTTP status codes or container monitoring tools (e.g., Docker Desktop, Portainer).
+
+---
+
+## Maintenance Responsibilities
+
+* **Routine updates:**
+  Run the following regularly to keep dependencies up to date:
+
+  ```bash
+  npm update
+  ```
+* **Environment management:**
+  All sensitive credentials (e.g., API keys) must be stored in `.env.local` (never committed to version control).
+* **Code maintenance:**
+  Follow standard pull request and review procedures before merging changes to the main branch.
+
+---
+
+## Security Notes
+
+* `.env.local` files are ignored by Git to prevent key exposure.
+* All builds are containerised for isolation and reproducibility.
+* Production images are served through a secure nginx setup.
+* User data and credentials (if applicable) are handled according to standard web security practices.
+
+---
+
